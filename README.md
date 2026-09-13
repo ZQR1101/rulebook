@@ -13,8 +13,8 @@
 </div>
 
 <div align="center">
-  <img src="images/工作台主界面.png" alt="Rulebook 工作台：三套剧本 + 红黄绿记分卡 + 待签字队列" width="1200">
-  <p><sub>工作台实况：三套剧本并行 · 每份文档红黄绿记分卡与覆盖率 · 红灯自动进签字队列</sub></p>
+  <img src="images/工作台演示.gif" alt="Rulebook 演示：工作台 → 文档详情（引用原文）→ 审批队列 → 规则手册 → 审计日志" width="1100">
+  <p><sub>演示闭环：三套剧本工作台 · 逐条判定与原文引用 · 审批队列红灯置顶 · 规则手册治理 · 全程审计</sub></p>
 </div>
 
 
