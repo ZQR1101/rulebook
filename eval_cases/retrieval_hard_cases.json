@@ -1,0 +1,50 @@
+{
+  "description": "硬案例条款检索标注集（按当前解析器标注，v2）。三份文档压测不同失败模式，每组自带 char_budget 使预算真正形成选择压力：软件开发外包合同（真实 PDF，付款证据分散在 5 个条款 + 第57条干扰项，2676 字符/预算 1200）、DPA 中文版（Common Paper 标准 DPA，15875 字符/预算 4000，预算内仅装得下 38% 条款，且证据以指令列表、审计报告等间接形式存在）、对抗样例（同义改写 + 通知干扰簇 + 否定表述，5348 字符/预算 2500）。指标 = 选段命中率（期望条款 ∩ 选中集合 ≠ ∅）。",
+  "documents": [
+    {
+      "path": "samples/downloaded/软件开发外包合同.pdf",
+      "playbook_id": "contract-compliance",
+      "char_budget": 1200,
+      "note": "真实合同：总字符 2676，预算 1200 强制丢弃约半数条款；付款证据分散 + 第57条『甲方应支付价款』为关键词干扰项",
+      "cases": [
+        {"rule_name": "付款账期", "expected_ordinals": [33, 35, 37, 40, 42]},
+        {"rule_name": "定价清晰度", "expected_ordinals": [26, 28, 31]},
+        {"rule_name": "交付与验收条款", "expected_ordinals": [19, 21, 23, 87, 91, 92]},
+        {"rule_name": "责任上限", "expected_ordinals": [82, 85]},
+        {"rule_name": "违约补偿条款", "expected_ordinals": [75, 85]},
+        {"rule_name": "终止条款", "expected_ordinals": [95]},
+        {"rule_name": "知识产权归属", "expected_ordinals": [45, 46, 48]},
+        {"rule_name": "分包披露", "expected_ordinals": [16, 17]},
+        {"rule_name": "适用法律", "expected_ordinals": [109, 110]}
+      ]
+    },
+    {
+      "path": "samples/downloaded/DPA_数据处理协议_中文.md",
+      "playbook_id": "dpa-review",
+      "char_budget": 4000,
+      "note": "Common Paper 标准 DPA：15875 字符，预算内仅装得下约 38% 条款；定义条款在语义空间与规则文本高度相似（语义磁铁），证据以指令列表、审计报告等间接形式存在",
+      "cases": [
+        {"rule_name": "安全事件通知", "expected_ordinals": [99]},
+        {"rule_name": "分包方同意与披露", "expected_ordinals": [72, 73, 75]},
+        {"rule_name": "跨境传输保障", "expected_ordinals": [78, 85]},
+        {"rule_name": "透明度与告知", "expected_ordinals": [109, 111]},
+        {"rule_name": "处理指令合规", "expected_ordinals": [64]},
+        {"rule_name": "审计与记录义务", "expected_ordinals": [102, 104]},
+        {"rule_name": "删除与返还义务", "expected_ordinals": [114, 116]}
+      ]
+    },
+    {
+      "path": "samples/downloaded/硬案例_对抗样例.md",
+      "playbook_id": "contract-compliance",
+      "char_budget": 2500,
+      "note": "合成对抗：同义改写（结算付款≠付款账期）、续约/开票两个通知干扰条款、责任否定表述（赔偿免责+无上限）；40 条款 5348 字符，预算 2500 丢弃约半数",
+      "cases": [
+        {"rule_name": "付款账期", "expected_ordinals": [4]},
+        {"rule_name": "数据泄露通知", "expected_ordinals": [28]},
+        {"rule_name": "责任上限", "expected_ordinals": [30]},
+        {"rule_name": "终止条款", "expected_ordinals": [32]},
+        {"rule_name": "分包披露", "expected_ordinals": [24]}
+      ]
+    }
+  ]
+}

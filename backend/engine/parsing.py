@@ -15,13 +15,15 @@ from backend.ocr_service import extract_text_from_document
 MAX_CLAUSE_CHARS = 2000
 MIN_CLAUSE_CHARS = 2
 
-# Numbered clause starts: "第3条", "3.1", "1)", "(a)", "Article 5", "-" bullets
+# Numbered clause starts: "## 标题", "第3条", "3.1", "一、", "(a)", "Article 5"
 _HEADING_RE = re.compile(
     r"""^\s*(
-        第[一二三四五六七八九十百\d]+[条款章节部分]
+        #{1,6}\s+\S
+      | 第[一二三四五六七八九十百\d]+[条款章节部分]
       | \d+(\.\d+)*[\.、\)]?\s+\S
       | [(（]?[a-zA-Z\d][)）]\s+\S
       | [（(][一二三四五六七八九十]+[)）]
+      | [一二三四五六七八九十]+、\s*\S
       | (Article|Section|Clause)\s+\d+
     )""",
     re.VERBOSE,
