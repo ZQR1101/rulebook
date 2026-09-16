@@ -32,7 +32,9 @@ def validate_citations(
 
     A citation is valid when its ``quote`` appears in the full document text.
     ``clause_texts`` narrows matching to the clauses the scorer actually saw
-    when provided.
+    when provided. Model-shape tolerance: bare strings and {"quote": …}
+    objects are both accepted; anything else is invalid, never an exception —
+    a malformed citation must not fail the whole document.
     """
 
     valid: list[dict] = []
@@ -41,9 +43,15 @@ def validate_citations(
     if clause_texts:
         haystacks.extend(clause_texts)
     for citation in citations or []:
-        quote = str(citation.get("quote") or "").strip()
-        if quote and any(quote_in_document(quote, hay) for hay in haystacks):
-            valid.append(citation)
+        if isinstance(citation, str):
+            normalized = {"quote": citation.strip()}
+        elif isinstance(citation, dict):
+            normalized = {"quote": str(citation.get("quote") or "").strip()}
         else:
-            invalid.append(citation)
+            normalized = None
+        quote = normalized["quote"] if normalized else ""
+        if normalized and quote and any(quote_in_document(quote, hay) for hay in haystacks):
+            valid.append(normalized)
+        else:
+            invalid.append(citation if isinstance(citation, dict) else {"quote": str(citation)})
     return valid, invalid
