@@ -24,6 +24,7 @@ function Shell({ user, onLogout, queueCount }) {
   const [notifications, setNotifications] = useState([]);
   const [unread, setUnread] = useState(0);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   let content;
   if (hash.startsWith("#/documents/")) {
@@ -89,6 +90,8 @@ function Shell({ user, onLogout, queueCount }) {
         user={user}
         queueCount={queueCount}
         onLogout={onLogout}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
       <Topbar
         notifications={notifications}
@@ -97,9 +100,10 @@ function Shell({ user, onLogout, queueCount }) {
         onTogglePanel={() => setPanelOpen((v) => !v)}
         onMarkAllRead={handleMarkAllRead}
         onItemClick={handleItemClick}
+        onOpenSidebar={() => setSidebarOpen(true)}
       />
-      <main className="min-h-screen bg-canvas pl-[200px] pt-14">
-        <div className="mx-auto w-full max-w-[1600px] space-y-6 p-6">{content}</div>
+      <main className="min-h-screen bg-canvas pt-14 lg:pl-[200px]">
+        <div className="mx-auto w-full max-w-[1600px] space-y-6 p-4 sm:p-6">{content}</div>
       </main>
     </div>
   );

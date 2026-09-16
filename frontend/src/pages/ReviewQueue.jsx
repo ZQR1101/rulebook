@@ -80,7 +80,7 @@ export default function ReviewQueuePage() {
 
       {error && <ErrorBanner message={error} />}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {[
           ["all", `全部 ${items?.length ?? 0}`],
           ["red", `红灯 ${redCount}`],

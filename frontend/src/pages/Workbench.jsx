@@ -199,11 +199,11 @@ export default function WorkbenchPage() {
         <h1 className="text-[20px] font-semibold text-ink">工作台</h1>
         <PrimaryButton onClick={() => setShowUpload(true)}>
           <Icon name="add" className="text-[18px]" />
-          上传文档
+          <span className="hidden sm:inline">上传文档</span>
         </PrimaryButton>
       </div>
 
-      <div className="flex gap-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:gap-5">
         {playbooks.map((spec) => (
           <PlaybookCard
             key={spec.id}
@@ -217,8 +217,8 @@ export default function WorkbenchPage() {
 
       {error && <ErrorBanner message={error} />}
 
-      <div className="rounded-lg border border-line bg-surface shadow-card">
-        <table className="w-full">
+      <div className="overflow-x-auto rounded-lg border border-line bg-surface shadow-card">
+        <table className="w-full min-w-[720px]">
           <thead>
             <tr className="border-b border-line-strong bg-canvas text-left text-[12px] font-medium uppercase tracking-wider text-ink-2">
               <th className="h-9 px-4 font-medium">编号</th>

@@ -85,70 +85,89 @@ export function Icon({ name, className = "" }) {
   return <span className={`material-symbols-outlined ${className}`}>{name}</span>;
 }
 
-export function Sidebar({ active, user, queueCount, onLogout }) {
+export function Sidebar({ active, user, queueCount, onLogout, open, onClose }) {
   return (
-    <aside className="fixed left-0 top-0 z-50 flex h-full w-[200px] select-none flex-col justify-between border-r border-line bg-surface">
-      <div>
-        <div className="flex h-14 items-center gap-2 border-b border-line px-4">
-          <div className="flex h-7 w-7 items-center justify-center rounded bg-accent text-white">
-            <Icon name="menu_book" className="text-[18px]" />
-          </div>
-          <span className="text-[16px] font-semibold tracking-tight text-ink">Rulebook</span>
-        </div>
-        <nav className="flex w-full flex-col gap-1 p-2">
-          {NAV_ITEMS.filter((item) => !item.adminOnly || user?.role === "admin").map((item) => {
-            const isActive = active === item.hash;
-            return (
-              <a
-                key={item.hash}
-                href={item.hash}
-                className={`flex items-center gap-2.5 rounded px-3 py-2 text-[13px] transition-colors ${
-                  isActive
-                    ? "bg-accent-tint font-semibold text-accent"
-                    : "text-ink-2 hover:bg-line-subtle hover:text-ink"
-                }`}
-              >
-                <Icon name={item.icon} className="text-[18px]" />
-                <span>{item.label}</span>
-                {item.badge === "queue" && queueCount > 0 && (
-                  <span className="ml-auto flex h-[18px] min-w-[18px] items-center justify-center rounded bg-red-text px-1 text-[11px] font-semibold text-white">
-                    {queueCount}
-                  </span>
-                )}
-              </a>
-            );
-          })}
-        </nav>
-      </div>
-      <div className="border-t border-line p-3">
-        <div className="flex items-center gap-2.5 rounded p-1.5 transition-colors hover:bg-line-subtle">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-white">
-            <Icon name="person" className="text-[18px]" />
-          </div>
-          <div className="flex min-w-0 flex-1 flex-col">
-            <div className="flex items-center justify-between gap-1">
-              <span className="truncate text-[13px] font-semibold text-ink">
-                {user?.display_name || user?.username || "—"}
-              </span>
-              <span className="shrink-0 rounded bg-canvas px-1.5 py-0.5 text-[11px] font-semibold text-ink-2">
-                {user?.role === "admin" ? "管理员" : "评审专家"}
-              </span>
+    <>
+      {open && (
+        <div
+          className="fixed inset-0 z-[45] bg-[rgba(33,37,41,0.4)] lg:hidden"
+          onClick={onClose}
+        />
+      )}
+      <aside
+        className={`fixed left-0 top-0 z-50 flex h-full w-[200px] select-none flex-col justify-between border-r border-line bg-surface transition-transform duration-200 lg:translate-x-0 ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div>
+          <div className="flex h-14 items-center gap-2 border-b border-line px-4">
+            <div className="flex h-7 w-7 items-center justify-center rounded bg-accent text-white">
+              <Icon name="menu_book" className="text-[18px]" />
             </div>
-            <div className="flex items-center justify-between">
-              <span className="truncate font-mono text-[11px] text-ink-3">
-                {user?.username || ""}
-              </span>
-              <button
-                onClick={onLogout}
-                className="text-[11px] text-ink-3 transition-colors hover:text-red-text"
-              >
-                退出
-              </button>
+            <span className="text-[16px] font-semibold tracking-tight text-ink">Rulebook</span>
+            <button
+              onClick={onClose}
+              className="ml-auto flex h-7 w-7 items-center justify-center rounded text-ink-3 hover:bg-line-subtle hover:text-ink lg:hidden"
+            >
+              <Icon name="close" className="text-[18px]" />
+            </button>
+          </div>
+          <nav className="flex w-full flex-col gap-1 p-2">
+            {NAV_ITEMS.filter((item) => !item.adminOnly || user?.role === "admin").map((item) => {
+              const isActive = active === item.hash;
+              return (
+                <a
+                  key={item.hash}
+                  href={item.hash}
+                  onClick={onClose}
+                  className={`flex items-center gap-2.5 rounded px-3 py-2 text-[13px] transition-colors ${
+                    isActive
+                      ? "bg-accent-tint font-semibold text-accent"
+                      : "text-ink-2 hover:bg-line-subtle hover:text-ink"
+                  }`}
+                >
+                  <Icon name={item.icon} className="text-[18px]" />
+                  <span>{item.label}</span>
+                  {item.badge === "queue" && queueCount > 0 && (
+                    <span className="ml-auto flex h-[18px] min-w-[18px] items-center justify-center rounded bg-red-text px-1 text-[11px] font-semibold text-white">
+                      {queueCount}
+                    </span>
+                  )}
+                </a>
+              );
+            })}
+          </nav>
+        </div>
+        <div className="border-t border-line p-3">
+          <div className="flex items-center gap-2.5 rounded p-1.5 transition-colors hover:bg-line-subtle">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-white">
+              <Icon name="person" className="text-[18px]" />
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <div className="flex items-center justify-between gap-1">
+                <span className="truncate text-[13px] font-semibold text-ink">
+                  {user?.display_name || user?.username || "—"}
+                </span>
+                <span className="shrink-0 rounded bg-canvas px-1.5 py-0.5 text-[11px] font-semibold text-ink-2">
+                  {user?.role === "admin" ? "管理员" : "评审专家"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="truncate font-mono text-[11px] text-ink-3">
+                  {user?.username || ""}
+                </span>
+                <button
+                  onClick={onLogout}
+                  className="text-[11px] text-ink-3 transition-colors hover:text-red-text"
+                >
+                  退出
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }
 
@@ -159,15 +178,24 @@ export function Topbar({
   onTogglePanel,
   onMarkAllRead,
   onItemClick,
+  onOpenSidebar,
 }) {
   return (
-    <header className="fixed left-[200px] right-0 top-0 z-40 flex h-14 items-center justify-between border-b border-line bg-canvas/80 px-6 backdrop-blur">
-      <div className="flex items-center gap-2 text-[12px] font-medium text-ink-2">
-        <Icon name="shield" className="text-[16px]" />
-        <span>合规策略与规则引擎</span>
+    <header className="fixed left-0 right-0 top-0 z-40 flex h-14 items-center justify-between border-b border-line bg-canvas/80 px-4 backdrop-blur lg:left-[200px] lg:px-6">
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onOpenSidebar}
+          className="flex h-8 w-8 items-center justify-center rounded text-ink-2 transition-colors hover:bg-line-subtle hover:text-ink lg:hidden"
+        >
+          <Icon name="menu" className="text-[20px]" />
+        </button>
+        <div className="hidden items-center gap-2 text-[12px] font-medium text-ink-2 sm:flex">
+          <Icon name="shield" className="text-[16px]" />
+          <span>合规策略与规则引擎</span>
+        </div>
       </div>
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1 rounded border border-line bg-surface px-2 py-1 font-mono text-[11px] text-ink-2">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="hidden items-center gap-1 rounded border border-line bg-surface px-2 py-1 font-mono text-[11px] text-ink-2 md:flex">
           <span className="h-2 w-2 rounded-full bg-accent" />
           <span>引擎运行中</span>
         </div>
@@ -184,7 +212,7 @@ export function Topbar({
             )}
           </button>
           {panelOpen && (
-            <div className="absolute right-0 top-10 w-[380px] rounded-lg border border-line bg-surface shadow-pop">
+            <div className="fixed right-2 top-[60px] w-[calc(100vw-1rem)] max-w-[380px] rounded-lg border border-line bg-surface shadow-pop sm:absolute sm:right-0 sm:top-10 sm:w-[380px]">
               <div className="flex items-center justify-between border-b border-line-subtle px-4 py-2.5">
                 <span className="text-[13px] font-semibold text-ink">通知中心</span>
                 {unread > 0 && (
@@ -223,7 +251,7 @@ export function Topbar({
             </div>
           )}
         </div>
-        <button className="flex h-8 w-8 items-center justify-center rounded text-ink-2 transition-colors hover:bg-line-subtle hover:text-ink">
+        <button className="hidden h-8 w-8 items-center justify-center rounded text-ink-2 transition-colors hover:bg-line-subtle hover:text-ink sm:flex">
           <Icon name="help_outline" className="text-[20px]" />
         </button>
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-white">
@@ -256,13 +284,15 @@ export function SecondaryButton({ children, className = "", ...props }) {
   );
 }
 
-export function TextAction({ children, tone = "accent", ...props }) {
+export function TextAction({ children, tone = "accent", className = "", ...props }) {
   const toneCls = tone === "red" ? "text-red-text hover:bg-red-bg" : "text-accent hover:bg-accent-tint";
   return (
     <button
-      className={`whitespace-nowrap rounded px-2 py-1 text-[13px] font-medium transition-colors ${toneCls} disabled:cursor-not-allowed disabled:text-ink-3 ${props.className || ""}`}
+      className={`whitespace-nowrap rounded px-2 py-1 text-[13px] font-medium transition-colors ${toneCls} disabled:cursor-not-allowed disabled:text-ink-3 ${className}`}
       {...props}
-    />
+    >
+      {children}
+    </button>
   );
 }
 
