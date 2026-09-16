@@ -21,7 +21,7 @@ export default {
         "red-text": "#E03131",
         "amber-bg": "#FFF9DB",
         "amber-line": "#FFE066",
-        "amber-text": "#D9480F",
+        "amber-text": "#9A6700",
         "green-bg": "#EBFBEE",
         "green-line": "#B2F2BB",
         "green-text": "#2B8A3E",
