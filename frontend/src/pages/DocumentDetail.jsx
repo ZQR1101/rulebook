@@ -14,8 +14,8 @@ import {
   TextAction,
 } from "../ui.jsx";
 
-function DecisionModal({ document_, verdict, onClose, onDone }) {
-  const [decision, setDecision] = useState("approve");
+function DecisionModal({ document_, verdict, initialDecision = "approve", onClose, onDone }) {
+  const [decision, setDecision] = useState(initialDecision);
   const [newRating, setNewRating] = useState(verdict.rating);
   const [note, setNote] = useState("");
   const [rationale, setRationale] = useState("");
@@ -561,7 +561,7 @@ export default function DocumentDetailPage({ documentId, user }) {
                   key={verdict.id}
                   verdict={verdict}
                   canReview={canReview}
-                  onDecide={(v) => setDeciding(v)}
+                  onDecide={(v, decision) => setDeciding({ verdict: v, decision })}
                 />
               ))}
             </div>
@@ -572,7 +572,8 @@ export default function DocumentDetailPage({ documentId, user }) {
       {deciding && (
         <DecisionModal
           document_={document_}
-          verdict={deciding}
+          verdict={deciding.verdict}
+          initialDecision={deciding.decision}
           onClose={() => setDeciding(null)}
           onDone={async () => {
             setDeciding(null);

@@ -427,9 +427,11 @@ _STATIC_DIR = Path(__file__).parent / "static"
 def home():
     index_file = _STATIC_DIR / "index.html"
     if index_file.is_file():
-        return FileResponse(index_file)
+        # index.html references hashed assets; never cache it, or users keep
+        # running a stale bundle after a rebuild.
+        return FileResponse(index_file, headers={"Cache-Control": "no-cache"})
     return {
-        "message": "AI 学习助手后端启动成功",
+        "message": "Rulebook 后端启动成功",
         "hint": (
             "Frontend static files are not bundled here. Run `npm run build` to emit "
             "backend/static, or start the Vite dev server with `npm run dev`."
