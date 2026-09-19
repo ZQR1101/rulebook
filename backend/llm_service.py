@@ -3,7 +3,13 @@ import os
 import re
 from typing import Any
 
-from backend.config import DEFAULT_BASE_URL, DEFAULT_MODEL, SUPPORTED_MODELS, get_model_api_settings
+from backend.config import (
+    DEFAULT_BASE_URL,
+    DEFAULT_MODEL,
+    SUPPORTED_MODELS,
+    get_config,
+    get_model_api_settings,
+)
 from backend.history_utils import context_prompt, history_prompt
 
 _default_llm = None
@@ -22,10 +28,14 @@ def normalize_model(model: str | None) -> str:
     return DEFAULT_MODEL
 
 
-def build_llm(model: str = DEFAULT_MODEL, temperature: float = 0.7, max_tokens: int = 2000):
+def build_llm(
+    model: str | None = None,
+    temperature: float = 0.7,
+    max_tokens: int = 2000,
+):
     from langchain_openai import ChatOpenAI
 
-    selected_model = normalize_model(model)
+    selected_model = normalize_model(model or get_config().model)
     base_url, api_key, _api_key_source = get_model_api_settings(selected_model)
 
     return ChatOpenAI(
