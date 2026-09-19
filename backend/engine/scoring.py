@@ -43,7 +43,8 @@ def _build_prompt(rule, clauses: list[ParsedClause], playbook_instructions: str)
 ## 输出要求
 只输出一个 JSON 对象，不要输出其他文字：
 {{"rating": "red|amber|green", "rationale": "判定理由（中文，≤150字）", "citations": [{{"quote": "文档原文片段"}}], "gap_reason": "文档缺失该内容时填写，否则留空"}}
-注意：quote 必须逐字摘自上方条款原文；green 判定必须至少有一条有效引用；文档中找不到对应内容时 rating=red 并填写 gap_reason。"""
+注意：quote 必须逐字摘自上方条款原文；green 判定必须至少有一条有效引用；文档中找不到对应内容时 rating=red 并填写 gap_reason。
+边界：本次只提供文档正文，附件内容不可核实不属于被审条款的缺陷——条款本身清晰合规时判 green，并在 rationale 末尾注明「附件未提供，需补充核对」；只有条款自身含糊或缺少关键要素时才判 amber/red。"""
 
 
 def _extract_json(content: str) -> dict | None:
