@@ -81,6 +81,7 @@ def apply_decision(
     decision = decision.lower().strip()
     if decision not in VALID_DECISIONS:
         raise IllegalTransition(f"未知操作: {decision}")
+    rating_before = verdict.rating
     if verdict.review_state not in _ALLOWED_TRANSITIONS[decision]:
         raise IllegalTransition(
             f"不允许的状态迁移: {verdict.review_state} → {DECISION_TO_STATE[decision]}"
@@ -115,7 +116,9 @@ def apply_decision(
             actor=actor,
             action=decision,
             detail={
-                "rating_before": verdict.rating,
+                "rating_before": rating_before,
+                "rating_after": verdict.rating,
+                "ai_rating": verdict.initial_rating,
                 "state": verdict.review_state,
                 "note": expert_note,
             },
@@ -129,6 +132,7 @@ def apply_decision(
         payload={
             "verdict_id": verdict.id,
             "rule_id": verdict.rule_id,
+            "rating_before": rating_before,
             "rating": verdict.rating,
             "review_state": verdict.review_state,
         },

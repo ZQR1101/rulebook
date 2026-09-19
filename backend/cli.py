@@ -5,6 +5,7 @@ Exposed as the ``rulebook`` console script:
 - ``rulebook serve``   start the backend (and the bundled web UI)
 - ``rulebook init``    create .env and the working directories
 - ``rulebook check``   verify the environment and dependencies
+- ``rulebook analytics`` aggregate AI vs expert sign-off (overturn / edit rates)
 - ``rulebook --version``
 """
 
@@ -212,6 +213,14 @@ def cmd_check(_args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+def _ensure_platform_schema() -> None:
+    """Idempotent table creation / additive columns — only ``serve`` runs it at startup."""
+
+    from backend.platform_db import init_platform_db
+
+    init_platform_db()
+
+
 def cmd_review(args: argparse.Namespace) -> int:
     """Headless single-document review: upload → engine → scorecard printout."""
 
@@ -219,6 +228,8 @@ def cmd_review(args: argparse.Namespace) -> int:
     from backend.documents.service import create_document
     from backend.engine.orchestrator import ReviewConflict, run_review
     from backend.platform_db import platform_session
+
+    _ensure_platform_schema()
 
     source = Path(args.file).expanduser().resolve()
     if not source.is_file():
@@ -280,6 +291,42 @@ def cmd_review(args: argparse.Namespace) -> int:
         session.close()
     print()
     _print_result("HINT", "Open the web UI to review, sign off, and export deliverables.")
+    return 0
+
+
+def cmd_analytics(args: argparse.Namespace) -> int:
+    """Sign-off analytics: how much of the AI's first pass the experts kept."""
+
+    import json
+
+    from backend.analytics import build_report, render_markdown
+    from backend.platform_db import platform_session
+
+    _ensure_platform_schema()
+    session = platform_session()
+    try:
+        report = build_report(session)
+    finally:
+        session.close()
+
+    if not report["overall"]["decided"]:
+        _print_result(
+            "WARN",
+            "平台库中还没有专家签字记录，改判率无从计算。"
+            "先在 Web UI 完成签字，或用 PATCH /documents/{document_id}/verdicts/{verdict_id}。",
+        )
+    payload = (
+        json.dumps(report, ensure_ascii=False, indent=2)
+        if args.json
+        else render_markdown(report)
+    )
+    if args.output:
+        path = Path(args.output).expanduser().resolve()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(payload + "\n", encoding="utf-8")
+        _print_result("OK", f"分析报告已写入 {path}")
+    else:
+        print(payload)
     return 0
 
 
@@ -362,6 +409,14 @@ def build_parser() -> argparse.ArgumentParser:
     review.add_argument("file", help="Path to the document (.pdf/.docx/.md/.txt)")
     review.add_argument("--playbook", default="contract-compliance", help=playbook_help)
     review.set_defaults(func=cmd_review)
+
+    analytics = subparsers.add_parser(
+        "analytics",
+        help="Aggregate AI first-pass vs expert sign-off: overturn and edit rates",
+    )
+    analytics.add_argument("--json", action="store_true", help="输出 JSON 而非 Markdown")
+    analytics.add_argument("--output", help="写入文件路径（默认打印到终端）")
+    analytics.set_defaults(func=cmd_analytics)
 
     inbox = subparsers.add_parser("inbox", help="Run the watched-folder auto-intake loop")
     inbox.add_argument("--playbook", default="contract-compliance", help=playbook_help)

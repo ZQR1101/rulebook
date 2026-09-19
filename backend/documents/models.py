@@ -92,6 +92,9 @@ class Verdict(PlatformBase):
     )
     # red | amber | green
     rating: Mapped[str] = mapped_column(String(10))
+    # The engine's first judgement, never touched by expert edits. Null for
+    # verdicts scored before this column existed → "unknown baseline" bucket.
+    initial_rating: Mapped[str | None] = mapped_column(String(10), nullable=True)
     rationale: Mapped[str] = mapped_column(Text, default="")
     citations: Mapped[list] = mapped_column(JSON, default=list)
     confidence: Mapped[float] = mapped_column(Float, default=0.0)

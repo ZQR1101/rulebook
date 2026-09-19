@@ -136,11 +136,35 @@ def init_platform_db() -> None:
 
     engine = get_platform_engine()
     PlatformBase.metadata.create_all(engine)
+    _add_missing_columns(engine)
 
     with platform_session() as session:
         _seed_playbook_rules(session)
         _ensure_bootstrap_admin(session)
         session.commit()
+
+
+# Columns introduced after a table already shipped. ``create_all`` only builds
+# missing tables, so existing databases need the explicit ALTER; pre-existing
+# rows keep NULL, which analytics report as "unknown baseline".
+ADDITIVE_COLUMNS: tuple[tuple[str, str, str], ...] = (
+    ("verdicts", "initial_rating", "VARCHAR(10)"),
+)
+
+
+def _add_missing_columns(engine: Engine) -> None:
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    tables = set(inspector.get_table_names())
+    with engine.begin() as connection:
+        for table, column, ddl in ADDITIVE_COLUMNS:
+            if table not in tables:
+                continue
+            if column in {c["name"] for c in inspector.get_columns(table)}:
+                continue
+            connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}"))
+            logger.info("schema: added %s.%s", table, column)
 
 
 def _ensure_bootstrap_admin(session: Session) -> None:

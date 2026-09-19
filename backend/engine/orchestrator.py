@@ -179,6 +179,7 @@ def run_review(document_id: str, *, trigger: str = "upload", custom_llm=None) ->
                     document_id=document.id,
                     rule_id=row["rule_id"],
                     rating=row["rating"],
+                    initial_rating=row["rating"],
                     rationale=row["rationale"],
                     citations=row["citations"],
                     gap_reason=row["gap_reason"],
