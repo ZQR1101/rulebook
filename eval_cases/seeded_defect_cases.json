@@ -1,0 +1,193 @@
+{
+  "description": "种入缺陷金标集（seeded-defect gold set）。每份合成文档按剧本规则逐条标注为 clean（合规诱饵）/ defects（埋入缺陷，含期望等级）/ gaps（整段缺失，期望 red + gap_reason），三类并集必须完整覆盖剧本全部启用规则。指标：缺陷召回、缺口召回、误报率、引用真实率、引用门拦截率。",
+  "cases": [
+    {
+      "id": "CG-SEED-01",
+      "title": "供应商合同 · 埋入 7 处缺陷（3 红 4 黄）",
+      "document": "eval_cases/seeded_defects/CG-SEED-01_埋入缺陷合同.txt",
+      "playbook_id": "contract-compliance",
+      "defects": [
+        {
+          "rule": "付款账期",
+          "expected_rating": "red",
+          "planted": "第三条：收到发票后 120 日内付款（标准 ≤60 日绿，>90 日红）"
+        },
+        {
+          "rule": "责任上限",
+          "expected_rating": "amber",
+          "planted": "第四条：累计赔偿上限为年度服务费的 30%（低于 50% 为黄）"
+        },
+        {
+          "rule": "数据泄露通知",
+          "expected_rating": "red",
+          "planted": "第八条：泄露后 30 日内邮件告知（超过 7 天为红）"
+        },
+        {
+          "rule": "数据存储地",
+          "expected_rating": "amber",
+          "planted": "第九条：可传境外云平台处理，跨境保障协议尚未签署（可跨境但需保障为黄）"
+        },
+        {
+          "rule": "可用性承诺",
+          "expected_rating": "amber",
+          "planted": "第十条：月度可用性 99.5%（99.0%–99.9% 为黄）"
+        },
+        {
+          "rule": "适用法律",
+          "expected_rating": "amber",
+          "planted": "第十三条：甲方为中国北京公司，合同适用美国加州法律并由加州法院排他管辖（仅约定对方地法律为黄）"
+        },
+        {
+          "rule": "分包披露",
+          "expected_rating": "red",
+          "planted": "第十五条：乙方可自行决定分包、无需甲方同意且无披露义务（允许自由分包为红）"
+        }
+      ],
+      "gaps": [],
+      "clean": [
+        "定价清晰度",
+        "交付与验收条款",
+        "终止条款",
+        "知识产权归属",
+        "数据保护义务",
+        "响应时限",
+        "违约补偿条款",
+        "审计权"
+      ]
+    },
+    {
+      "id": "CG-SEED-02",
+      "title": "智慧校园合同 · 8 项整段缺失 + 2 处黄",
+      "document": "eval_cases/seeded_defects/CG-SEED-02_缺口合同.txt",
+      "playbook_id": "contract-compliance",
+      "defects": [
+        {
+          "rule": "知识产权归属",
+          "expected_rating": "amber",
+          "planted": "第六条：交付成果知识产权双方共有，份额与使用范围留待协商（共有或范围模糊为黄）"
+        },
+        {
+          "rule": "数据保护义务",
+          "expected_rating": "amber",
+          "planted": "第五条：仅有商业信息保密义务，无加密、访问控制与保密期（义务不完整为黄）"
+        }
+      ],
+      "gaps": [
+        {
+          "rule": "责任上限",
+          "missing": "全文无责任上限/赔偿责任条款"
+        },
+        {
+          "rule": "数据泄露通知",
+          "missing": "全文无数据泄露通知时限与流程"
+        },
+        {
+          "rule": "数据存储地",
+          "missing": "全文无数据存储或处理地域约定"
+        },
+        {
+          "rule": "可用性承诺",
+          "missing": "全文无服务可用性 SLA"
+        },
+        {
+          "rule": "响应时限",
+          "missing": "全文无故障响应与处理时限"
+        },
+        {
+          "rule": "违约补偿条款",
+          "missing": "全文无未达 SLA 的补偿/服务抵扣机制"
+        },
+        {
+          "rule": "审计权",
+          "missing": "全文无甲方对乙方的审计权"
+        },
+        {
+          "rule": "分包披露",
+          "missing": "全文无分包披露与同意条款"
+        }
+      ],
+      "clean": [
+        "付款账期",
+        "定价清晰度",
+        "交付与验收条款",
+        "终止条款",
+        "适用法律"
+      ]
+    },
+    {
+      "id": "CG-SEED-03",
+      "title": "完全合规合同 · 0 缺陷（误报探针）",
+      "document": "eval_cases/seeded_defects/CG-SEED-03_完全合规合同.txt",
+      "playbook_id": "contract-compliance",
+      "defects": [],
+      "gaps": [],
+      "clean": [
+        "付款账期",
+        "定价清晰度",
+        "交付与验收条款",
+        "责任上限",
+        "终止条款",
+        "知识产权归属",
+        "数据保护义务",
+        "数据泄露通知",
+        "数据存储地",
+        "可用性承诺",
+        "响应时限",
+        "违约补偿条款",
+        "适用法律",
+        "审计权",
+        "分包披露"
+      ]
+    },
+    {
+      "id": "DI-SEED-01",
+      "title": "客户 SOW · 埋入 5 处风险（3 红 2 黄）+ 2 项缺失",
+      "document": "eval_cases/seeded_defects/DI-SEED-01_埋入风险SOW.txt",
+      "playbook_id": "delivery-intake",
+      "defects": [
+        {
+          "rule": "需求范围明确",
+          "expected_rating": "amber",
+          "planted": "2.2：另需支持甲方其他各类信息化需求并提供协助（范围有歧义为黄）"
+        },
+        {
+          "rule": "范围蔓延风险",
+          "expected_rating": "red",
+          "planted": "2.2 开放式交付承诺，且全文无变更控制流程（无变更控制且措辞开放为红）"
+        },
+        {
+          "rule": "不切实际的承诺",
+          "expected_rating": "red",
+          "planted": "3.2：3 周内完成 12 个院系模块定制开发且零缺陷上线、预算不得超支（明显不可达为红）"
+        },
+        {
+          "rule": "依赖与前置条件",
+          "expected_rating": "amber",
+          "planted": "第8节仅列接口文档/测试账号与机房网络，未列数据、审批、预算等前置条件（部分列明为黄）"
+        },
+        {
+          "rule": "数据处理合规",
+          "expected_rating": "red",
+          "planted": "9.1/9.2：采集学生姓名、手机号、GPS 定位并用于算法优化与商业分析，全文无授权与合法性基础（涉敏感数据且无授权为红）"
+        }
+      ],
+      "gaps": [
+        {
+          "rule": "单点依赖",
+          "missing": "全文未识别对关键人员、系统或供应商的单点依赖及缓解安排"
+        },
+        {
+          "rule": "保密与知识产权",
+          "missing": "全文无保密条款，亦无交付成果 IP 归属约定"
+        }
+      ],
+      "clean": [
+        "验收标准",
+        "关键角色与联系人",
+        "时间与里程碑",
+        "计费与结算",
+        "责任与赔偿"
+      ]
+    }
+  ]
+}
