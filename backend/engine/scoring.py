@@ -29,6 +29,9 @@ def _build_prompt(rule, clauses: list[ParsedClause], playbook_instructions: str)
     clause_blocks = "\n\n".join(
         f"[条款 {clause.ordinal}]{(' ' + clause.heading) if clause.heading else ''}\n{clause.text}"
         for clause in clauses
+    ) or (
+        "（未检索到与本规则相关的条款。这就是文档缺失该内容的证据："
+        "请判 red 并填写 gap_reason，此时不得引用任何原文。）"
     )
     return f"""{playbook_instructions}
 

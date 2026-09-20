@@ -23,6 +23,13 @@ MAX_RULE_CONTEXT_CHARS = 6000
 MIN_TOP = 3
 SEMANTIC_WEIGHT = 0.6
 KEYWORD_WEIGHT = 0.4
+# CJK bigrams are roughly one token per character, so the old 24-token ceiling
+# would have truncated a rule's guidance before its distinctive tail.
+MAX_QUERY_KEYWORDS = 64
+_TOKEN_RE = re.compile("[A-Za-z]+|\\d+(?:\\.\\d+)+|[\\u4e00-\\u9fff]+")
+_CJK_RUN = re.compile("[\\u4e00-\\u9fff]+")
+
+
 STOPWORDS = {
     "的", "了", "和", "是", "在", "有", "与", "及", "或", "对", "为", "不", "按",
     "检查", "应当", "必须", "条款", "内容", "相关", "情况", "要求", "是否",
@@ -32,14 +39,28 @@ STOPWORDS = {
 
 @lru_cache(maxsize=512)
 def _keywords(text: str) -> tuple[str, ...]:
-    tokens = re.findall(r"[A-Za-z]+|[\u4e00-\u9fff]{2,4}|\d+(?:\.\d+)+", text.lower())
+    """Query keywords: latin/number runs whole, CJK runs as overlapping bigrams.
+
+    Slicing Chinese into non-overlapping windows made every match boundary
+    dependent: 「可用性承诺」 cut as 「可用性承」+「诺是多少」 matched neither
+    「服务可用性」 nor 「乙方承诺」, so a rule scored 0 against a document that
+    plainly contained its subject. Overlapping bigrams match wherever the two
+    sides break.
+    """
+
     seen: list[str] = []
-    for token in tokens:
-        if token in STOPWORDS or len(token) < 2:
-            continue
-        if token not in seen:
-            seen.append(token)
-    return tuple(seen[:24])
+    for match in _TOKEN_RE.finditer(text.lower()):
+        chunk = match.group(0)
+        if _CJK_RUN.fullmatch(chunk):
+            tokens = [chunk[index : index + 2] for index in range(len(chunk) - 1)]
+        else:
+            tokens = [chunk]
+        for token in tokens:
+            if token in STOPWORDS or len(token) < 2:
+                continue
+            if token not in seen:
+                seen.append(token)
+    return tuple(seen[:MAX_QUERY_KEYWORDS])
 
 
 def score_clause(clause_text: str, query_keywords: tuple[str, ...]) -> int:
@@ -111,9 +132,22 @@ def select_clauses(
     Without an embedder (or in keyword mode) this is the v1 token-overlap
     ranking. With semantic/hybrid mode and a ready embedder, cosine similarity
     participates; any embedder failure degrades to keyword automatically.
-    Always returns at least ``min_top`` clauses so the scorer can judge absence
-    of content.
+
+    A clause with no keyword signal at all carries no evidence for this rule, so
+    it is never selected. The result may legitimately be empty, and empty is the
+    scorer's evidence that the document lacks the content: padding up to
+    ``min_top`` instead handed it filler to cite, which made an honest
+    "文档未约定该项" unreachable. ``min_top`` is a floor among candidates that
+    do carry signal. A document that fits the budget entirely is returned whole —
+    nothing is scarce, so nothing is filtered.
     """
+
+    if clauses and sum(len(clause.text) for clause in clauses) <= char_budget:
+        # Nothing has to be thrown away, so don't narrow anything: relevance
+        # ranking only earns its keep when the budget is scarce. Dropping
+        # non-matching clauses here would hide text the scorer could have read
+        # for free and turn a retrieval choice into a false "文档缺失该项".
+        return sorted(clauses, key=lambda clause: clause.ordinal)
 
     keywords = _keywords(rule_text)
     keyword_scores = {clause.ordinal: score_clause(clause.text, keywords) for clause in clauses}
@@ -133,8 +167,12 @@ def select_clauses(
             return semantic_norm
         return SEMANTIC_WEIGHT * semantic_norm + KEYWORD_WEIGHT * keyword_norm
 
+    # Floor is "any signal at all", deliberately not a tuned threshold: a cutoff
+    # of 2 caught 9/10 labelled gaps but dropped 6 of the 34 gold retrieval
+    # cases, because a clause matched by a single bigram is often the right
+    # clause. Lexical score cannot tell "weak but correct" from "stray word".
     ranked = sorted(
-        enumerate(clauses),
+        (pair for pair in enumerate(clauses) if combined_score(pair[1]) > 0),
         key=lambda pair: (-combined_score(pair[1]), pair[0]),
     )
 

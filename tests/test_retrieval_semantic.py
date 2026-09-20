@@ -75,7 +75,9 @@ class TestSemanticRetrieval:
     def test_keyword_mode_misses_paraphrased_clause(self):
         selected = select_clauses(CLAUSES, RULE, **self.BUDGET)
         ordinals = {c.ordinal for c in selected}
-        assert ordinals == {1, 3}  # 关键词只命中条款1，同义改写的条款2落选
+        # 关键词只命中条款1；条款2同义改写落选，条款3（热线支持）与本规则零相关，
+        # 不再为凑满 40 字预算被当填充项拉进来（旧行为 {1,3} 正是那个缺陷）
+        assert ordinals == {1}
 
     def test_semantic_mode_selects_paraphrased_clause(self):
         embedder = FakeEmbedder(VECTORS)
@@ -99,7 +101,7 @@ class TestSemanticRetrieval:
         embedder = BrokenEmbedder(VECTORS)
         embedder.ensure_ready(CLAUSES)
         selected = select_clauses(CLAUSES, RULE, embedder=embedder, mode="hybrid", **self.BUDGET)
-        assert {c.ordinal for c in selected} == {1, 3}  # 自动降级关键词，不抛异常
+        assert {c.ordinal for c in selected} == {1}  # 自动降级关键词，不抛异常
 
     def test_document_order_preserved_in_result(self):
         embedder = FakeEmbedder(VECTORS)
@@ -111,6 +113,61 @@ class TestSemanticRetrieval:
         embedder = FakeEmbedder(VECTORS)
         assert embedder.ensure_ready([ParsedClause(ordinal=1, heading=None, text="未知文本")]) is False
         assert embedder.semantic_scores(RULE) is None
+
+
+class TestAbsenceIsReportable:
+    """A rule that matches nothing must be allowed to come back empty.
+
+    Padding to ``MIN_TOP`` handed the scorer zero-relevance text to cite for
+    content the document did not contain, so an honest "文档未约定该项" was
+    structurally unreachable — in the CUAD run the absence-agreement rate could
+    only ever be 0%.
+    """
+
+    ENGLISH_CONTRACT = [
+        ParsedClause(ordinal=1, heading=None, text="The Supplier shall deliver the Products in each month."),
+        ParsedClause(ordinal=2, heading=None, text="Manufacturer grants Distributor a non-exclusive license."),
+        ParsedClause(ordinal=3, heading=None, text="Prices are payable within forty-five days of invoice."),
+    ]
+
+    # 三段正文约 184 字；预算给 120 才构成"预算紧张"，才会触发证据筛选
+    SCARCE = dict(char_budget=120, mode="keyword")
+
+    def test_no_candidate_survives_a_rule_that_matches_nothing(self):
+        # 中文规则 × 英文正文：词面重叠为 0，检索必须给出空集而非凑三段填充
+        assert select_clauses(self.ENGLISH_CONTRACT, "审计权 检查是否约定审计对方账簿记录", **self.SCARCE) == []
+
+    def test_min_top_does_not_resurrect_filler(self):
+        selected = select_clauses(
+            self.ENGLISH_CONTRACT,
+            "审计权 检查是否约定审计对方账簿记录",
+            min_top=3,
+            **self.SCARCE,
+        )
+        assert selected == []
+
+    def test_single_relevant_clause_survives_alone(self):
+        selected = select_clauses(self.ENGLISH_CONTRACT, "invoice payment 付款", **self.SCARCE)
+        assert [clause.ordinal for clause in selected] == [3]  # min_top=3 不会补进 1、2
+
+    def test_a_document_that_fits_the_budget_is_returned_whole(self):
+        """预算不紧张时什么都不筛：该看的全文都得看到。"""
+        selected = select_clauses(
+            self.ENGLISH_CONTRACT, "审计权 检查是否约定审计对方账簿记录", char_budget=6000, mode="keyword"
+        )
+        assert [clause.ordinal for clause in selected] == [1, 2, 3]
+
+    def test_empty_candidates_become_an_explicit_absence_instruction(self):
+        from types import SimpleNamespace
+
+        from backend.engine.scoring import _build_prompt
+
+        rule = SimpleNamespace(dimension="监管", name="审计权", guidance="检查是否约定审计权")
+        prompt = _build_prompt(rule, [], "审阅指令")
+        assert "未检索到与本规则相关的条款" in prompt
+        assert "不得引用任何原文" in prompt
+        # 有候选时这句不能出现，否则会教模型把正常条款误报成缺失
+        assert "未检索到" not in _build_prompt(rule, self.ENGLISH_CONTRACT, "审阅指令")
 
 
 class TestEmbedderFactory:
