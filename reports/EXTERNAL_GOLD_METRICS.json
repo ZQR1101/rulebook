@@ -1,0 +1,1178 @@
+{
+  "generated_at": "2026-09-20T14:11:16.771986+00:00",
+  "model": "deepseek-flash",
+  "fake": null,
+  "failed_contracts": [],
+  "overall": {
+    "contracts": 8,
+    "rules_scored": 56,
+    "expert_spans": 117,
+    "spans_hit": 15,
+    "localization_recall": 0.1282,
+    "presence_agreement": 0.7234,
+    "absence_agreement": 0.0,
+    "over_claim_rules": 9,
+    "citations_stored": 76,
+    "retrieval_limited_contracts": 8,
+    "localization_recall_by_band": {
+      "≤24k 字符": {
+        "contracts": 4,
+        "spans_total": 36,
+        "spans_hit": 8,
+        "localization_recall": 0.2222
+      },
+      ">24k 字符": {
+        "contracts": 4,
+        "spans_total": 81,
+        "spans_hit": 7,
+        "localization_recall": 0.0864
+      }
+    },
+    "total_latency_ms": 2173554,
+    "spans_hit_text": "15/117",
+    "presence_text": "34/47",
+    "absence_text": "0/9",
+    "llm_calls": 120,
+    "tokens": 581748,
+    "token_source": "api",
+    "cost_usd": 0.238217
+  },
+  "results": [
+    {
+      "title": "IVILLAGEINC_03_17_1999-EX-10.16-SPONSORSHIP AGREEMENT",
+      "chars": 23723,
+      "length_band": "≤24k 字符",
+      "retrieval_limited": true,
+      "rules": [
+        {
+          "rule": "定价清晰度",
+          "categories": [
+            "Price Restrictions",
+            "Minimum Commitment",
+            "Revenue/Profit Sharing"
+          ],
+          "expert_present": true,
+          "expert_spans": 5,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 2,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "审计权",
+          "categories": [
+            "Audit Rights"
+          ],
+          "expert_present": true,
+          "expert_spans": 2,
+          "cited_spans_hit": 1,
+          "localization_recall": 0.5,
+          "engine_rating": "amber",
+          "engine_claims_absence": false,
+          "citations_stored": 1,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "知识产权归属",
+          "categories": [
+            "Ip Ownership Assignment",
+            "Joint Ip Ownership"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 2,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "终止条款",
+          "categories": [
+            "Termination For Convenience",
+            "Notice Period To Terminate Renewal"
+          ],
+          "expert_present": false,
+          "expert_spans": 0,
+          "cited_spans_hit": 0,
+          "localization_recall": null,
+          "engine_rating": "green",
+          "engine_claims_absence": false,
+          "citations_stored": 3,
+          "agreement": false,
+          "over_claim": true
+        },
+        {
+          "rule": "责任上限",
+          "categories": [
+            "Cap On Liability",
+            "Uncapped Liability"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 1,
+          "localization_recall": 1.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 1,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "违约补偿条款",
+          "categories": [
+            "Liquidated Damages",
+            "Warranty Duration"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "green",
+          "engine_claims_absence": false,
+          "citations_stored": 2,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "适用法律",
+          "categories": [
+            "Governing Law"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": true,
+          "citations_stored": 0,
+          "agreement": false,
+          "over_claim": false
+        }
+      ],
+      "unjudged_rules": [],
+      "present_rules": 6,
+      "agreed_present": 5,
+      "absent_rules": 1,
+      "agreed_absent": 0,
+      "over_claims": 1,
+      "spans_total": 11,
+      "spans_hit": 2,
+      "citations_stored": 11,
+      "friendly_id": "CG-0001",
+      "latency_ms": 532131,
+      "usage": {
+        "model": "deepseek-flash",
+        "calls": 15,
+        "input_tokens": 44209,
+        "output_tokens": 18789,
+        "total_tokens": 62998,
+        "token_source": "api",
+        "estimated_cost_usd": 0.023873,
+        "currency": "USD",
+        "pricing_source": "default_estimate"
+      },
+      "verdicts": 15
+    },
+    {
+      "title": "AMERICASSHOPPINGMALLINC_12_10_1999-EX-10.2-SITE DEVELOPMENT AND HOSTING AGREEMENT",
+      "chars": 19351,
+      "length_band": "≤24k 字符",
+      "retrieval_limited": true,
+      "rules": [
+        {
+          "rule": "定价清晰度",
+          "categories": [
+            "Price Restrictions",
+            "Minimum Commitment",
+            "Revenue/Profit Sharing"
+          ],
+          "expert_present": true,
+          "expert_spans": 2,
+          "cited_spans_hit": 1,
+          "localization_recall": 0.5,
+          "engine_rating": "amber",
+          "engine_claims_absence": false,
+          "citations_stored": 3,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "审计权",
+          "categories": [
+            "Audit Rights"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 1,
+          "localization_recall": 1.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 1,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "知识产权归属",
+          "categories": [
+            "Ip Ownership Assignment",
+            "Joint Ip Ownership"
+          ],
+          "expert_present": false,
+          "expert_spans": 0,
+          "cited_spans_hit": 0,
+          "localization_recall": null,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 2,
+          "agreement": false,
+          "over_claim": true
+        },
+        {
+          "rule": "终止条款",
+          "categories": [
+            "Termination For Convenience",
+            "Notice Period To Terminate Renewal"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 1,
+          "localization_recall": 1.0,
+          "engine_rating": "amber",
+          "engine_claims_absence": false,
+          "citations_stored": 3,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "责任上限",
+          "categories": [
+            "Cap On Liability",
+            "Uncapped Liability"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 1,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "违约补偿条款",
+          "categories": [
+            "Liquidated Damages",
+            "Warranty Duration"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 1,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "适用法律",
+          "categories": [
+            "Governing Law"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 1,
+          "agreement": true,
+          "over_claim": false
+        }
+      ],
+      "unjudged_rules": [],
+      "present_rules": 6,
+      "agreed_present": 6,
+      "absent_rules": 1,
+      "agreed_absent": 0,
+      "over_claims": 1,
+      "spans_total": 7,
+      "spans_hit": 3,
+      "citations_stored": 12,
+      "friendly_id": "CG-0002",
+      "latency_ms": 475221,
+      "usage": {
+        "model": "deepseek-flash",
+        "calls": 15,
+        "input_tokens": 47557,
+        "output_tokens": 25685,
+        "total_tokens": 73242,
+        "token_source": "api",
+        "estimated_cost_usd": 0.0300594,
+        "currency": "USD",
+        "pricing_source": "default_estimate"
+      },
+      "verdicts": 15
+    },
+    {
+      "title": "InnerscopeHearingTechnologiesInc_20181109_8-K_EX-10.6_11419704_EX-10.6_Distributor Agreement",
+      "chars": 22396,
+      "length_band": "≤24k 字符",
+      "retrieval_limited": true,
+      "rules": [
+        {
+          "rule": "定价清晰度",
+          "categories": [
+            "Price Restrictions",
+            "Minimum Commitment",
+            "Revenue/Profit Sharing"
+          ],
+          "expert_present": true,
+          "expert_spans": 4,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 2,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "审计权",
+          "categories": [
+            "Audit Rights"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 1,
+          "localization_recall": 1.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 1,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "知识产权归属",
+          "categories": [
+            "Ip Ownership Assignment",
+            "Joint Ip Ownership"
+          ],
+          "expert_present": true,
+          "expert_spans": 2,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 2,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "终止条款",
+          "categories": [
+            "Termination For Convenience",
+            "Notice Period To Terminate Renewal"
+          ],
+          "expert_present": false,
+          "expert_spans": 0,
+          "cited_spans_hit": 0,
+          "localization_recall": null,
+          "engine_rating": "amber",
+          "engine_claims_absence": false,
+          "citations_stored": 2,
+          "agreement": false,
+          "over_claim": true
+        },
+        {
+          "rule": "责任上限",
+          "categories": [
+            "Cap On Liability",
+            "Uncapped Liability"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 2,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "违约补偿条款",
+          "categories": [
+            "Liquidated Damages",
+            "Warranty Duration"
+          ],
+          "expert_present": false,
+          "expert_spans": 0,
+          "cited_spans_hit": 0,
+          "localization_recall": null,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 2,
+          "agreement": false,
+          "over_claim": true
+        },
+        {
+          "rule": "适用法律",
+          "categories": [
+            "Governing Law"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 1,
+          "agreement": true,
+          "over_claim": false
+        }
+      ],
+      "unjudged_rules": [],
+      "present_rules": 5,
+      "agreed_present": 5,
+      "absent_rules": 2,
+      "agreed_absent": 0,
+      "over_claims": 2,
+      "spans_total": 9,
+      "spans_hit": 1,
+      "citations_stored": 12,
+      "friendly_id": "CG-0003",
+      "latency_ms": 327121,
+      "usage": {
+        "model": "deepseek-flash",
+        "calls": 15,
+        "input_tokens": 43771,
+        "output_tokens": 21096,
+        "total_tokens": 64867,
+        "token_source": "api",
+        "estimated_cost_usd": 0.025631,
+        "currency": "USD",
+        "pricing_source": "default_estimate"
+      },
+      "verdicts": 15
+    },
+    {
+      "title": "ScansourceInc_20190822_10-K_EX-10.38_11793958_EX-10.38_Distributor Agreement2",
+      "chars": 13330,
+      "length_band": "≤24k 字符",
+      "retrieval_limited": true,
+      "rules": [
+        {
+          "rule": "定价清晰度",
+          "categories": [
+            "Price Restrictions",
+            "Minimum Commitment",
+            "Revenue/Profit Sharing"
+          ],
+          "expert_present": false,
+          "expert_spans": 0,
+          "cited_spans_hit": 0,
+          "localization_recall": null,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 3,
+          "agreement": false,
+          "over_claim": true
+        },
+        {
+          "rule": "审计权",
+          "categories": [
+            "Audit Rights"
+          ],
+          "expert_present": true,
+          "expert_spans": 2,
+          "cited_spans_hit": 1,
+          "localization_recall": 0.5,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 1,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "知识产权归属",
+          "categories": [
+            "Ip Ownership Assignment",
+            "Joint Ip Ownership"
+          ],
+          "expert_present": false,
+          "expert_spans": 0,
+          "cited_spans_hit": 0,
+          "localization_recall": null,
+          "engine_rating": "green",
+          "engine_claims_absence": false,
+          "citations_stored": 2,
+          "agreement": false,
+          "over_claim": true
+        },
+        {
+          "rule": "终止条款",
+          "categories": [
+            "Termination For Convenience",
+            "Notice Period To Terminate Renewal"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": true,
+          "citations_stored": 0,
+          "agreement": false,
+          "over_claim": false
+        },
+        {
+          "rule": "责任上限",
+          "categories": [
+            "Cap On Liability",
+            "Uncapped Liability"
+          ],
+          "expert_present": true,
+          "expert_spans": 4,
+          "cited_spans_hit": 1,
+          "localization_recall": 0.25,
+          "engine_rating": "amber",
+          "engine_claims_absence": false,
+          "citations_stored": 1,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "违约补偿条款",
+          "categories": [
+            "Liquidated Damages",
+            "Warranty Duration"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 1,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "适用法律",
+          "categories": [
+            "Governing Law"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": true,
+          "citations_stored": 0,
+          "agreement": false,
+          "over_claim": false
+        }
+      ],
+      "unjudged_rules": [],
+      "present_rules": 5,
+      "agreed_present": 3,
+      "absent_rules": 2,
+      "agreed_absent": 0,
+      "over_claims": 2,
+      "spans_total": 9,
+      "spans_hit": 2,
+      "citations_stored": 8,
+      "friendly_id": "CG-0004",
+      "latency_ms": 167240,
+      "usage": {
+        "model": "deepseek-flash",
+        "calls": 15,
+        "input_tokens": 45574,
+        "output_tokens": 30645,
+        "total_tokens": 76219,
+        "token_source": "api",
+        "estimated_cost_usd": 0.0336308,
+        "currency": "USD",
+        "pricing_source": "default_estimate"
+      },
+      "verdicts": 15
+    },
+    {
+      "title": "KitovPharmaLtd_20190326_20-F_EX-4.15_11584449_EX-4.15_Manufacturing Agreement",
+      "chars": 57436,
+      "length_band": ">24k 字符",
+      "retrieval_limited": true,
+      "rules": [
+        {
+          "rule": "定价清晰度",
+          "categories": [
+            "Price Restrictions",
+            "Minimum Commitment",
+            "Revenue/Profit Sharing"
+          ],
+          "expert_present": true,
+          "expert_spans": 3,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 1,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "审计权",
+          "categories": [
+            "Audit Rights"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": true,
+          "citations_stored": 0,
+          "agreement": false,
+          "over_claim": false
+        },
+        {
+          "rule": "知识产权归属",
+          "categories": [
+            "Ip Ownership Assignment",
+            "Joint Ip Ownership"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "amber",
+          "engine_claims_absence": false,
+          "citations_stored": 4,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "终止条款",
+          "categories": [
+            "Termination For Convenience",
+            "Notice Period To Terminate Renewal"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": true,
+          "citations_stored": 0,
+          "agreement": false,
+          "over_claim": false
+        },
+        {
+          "rule": "责任上限",
+          "categories": [
+            "Cap On Liability",
+            "Uncapped Liability"
+          ],
+          "expert_present": true,
+          "expert_spans": 3,
+          "cited_spans_hit": 1,
+          "localization_recall": 0.3333,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 1,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "违约补偿条款",
+          "categories": [
+            "Liquidated Damages",
+            "Warranty Duration"
+          ],
+          "expert_present": true,
+          "expert_spans": 2,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 2,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "适用法律",
+          "categories": [
+            "Governing Law"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": true,
+          "citations_stored": 0,
+          "agreement": false,
+          "over_claim": false
+        }
+      ],
+      "unjudged_rules": [],
+      "present_rules": 7,
+      "agreed_present": 4,
+      "absent_rules": 0,
+      "agreed_absent": 0,
+      "over_claims": 0,
+      "spans_total": 12,
+      "spans_hit": 1,
+      "citations_stored": 8,
+      "friendly_id": "CG-0005",
+      "latency_ms": 126762,
+      "usage": {
+        "model": "deepseek-flash",
+        "calls": 15,
+        "input_tokens": 54611,
+        "output_tokens": 24040,
+        "total_tokens": 78651,
+        "token_source": "api",
+        "estimated_cost_usd": 0.0301542,
+        "currency": "USD",
+        "pricing_source": "default_estimate"
+      },
+      "verdicts": 15
+    },
+    {
+      "title": "NETGEAR,INC_04_21_2003-EX-10.16-DISTRIBUTOR AGREEMENT",
+      "chars": 41501,
+      "length_band": ">24k 字符",
+      "retrieval_limited": true,
+      "rules": [
+        {
+          "rule": "定价清晰度",
+          "categories": [
+            "Price Restrictions",
+            "Minimum Commitment",
+            "Revenue/Profit Sharing"
+          ],
+          "expert_present": true,
+          "expert_spans": 2,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 3,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "审计权",
+          "categories": [
+            "Audit Rights"
+          ],
+          "expert_present": true,
+          "expert_spans": 2,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": true,
+          "citations_stored": 0,
+          "agreement": false,
+          "over_claim": false
+        },
+        {
+          "rule": "知识产权归属",
+          "categories": [
+            "Ip Ownership Assignment",
+            "Joint Ip Ownership"
+          ],
+          "expert_present": false,
+          "expert_spans": 0,
+          "cited_spans_hit": 0,
+          "localization_recall": null,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 1,
+          "agreement": false,
+          "over_claim": true
+        },
+        {
+          "rule": "终止条款",
+          "categories": [
+            "Termination For Convenience",
+            "Notice Period To Terminate Renewal"
+          ],
+          "expert_present": true,
+          "expert_spans": 2,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 1,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "责任上限",
+          "categories": [
+            "Cap On Liability",
+            "Uncapped Liability"
+          ],
+          "expert_present": true,
+          "expert_spans": 11,
+          "cited_spans_hit": 4,
+          "localization_recall": 0.3636,
+          "engine_rating": "amber",
+          "engine_claims_absence": false,
+          "citations_stored": 2,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "违约补偿条款",
+          "categories": [
+            "Liquidated Damages",
+            "Warranty Duration"
+          ],
+          "expert_present": true,
+          "expert_spans": 8,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": true,
+          "citations_stored": 0,
+          "agreement": false,
+          "over_claim": false
+        },
+        {
+          "rule": "适用法律",
+          "categories": [
+            "Governing Law"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": true,
+          "citations_stored": 0,
+          "agreement": false,
+          "over_claim": false
+        }
+      ],
+      "unjudged_rules": [],
+      "present_rules": 6,
+      "agreed_present": 3,
+      "absent_rules": 1,
+      "agreed_absent": 0,
+      "over_claims": 1,
+      "spans_total": 26,
+      "spans_hit": 4,
+      "citations_stored": 7,
+      "friendly_id": "CG-0006",
+      "latency_ms": 114640,
+      "usage": {
+        "model": "deepseek-flash",
+        "calls": 15,
+        "input_tokens": 43577,
+        "output_tokens": 21207,
+        "total_tokens": 64784,
+        "token_source": "api",
+        "estimated_cost_usd": 0.025681,
+        "currency": "USD",
+        "pricing_source": "default_estimate"
+      },
+      "verdicts": 15
+    },
+    {
+      "title": "VISIUMTECHNOLOGIES,INC_10_20_2004-EX-10.20-DISTRIBUTOR AGREEMENT",
+      "chars": 49784,
+      "length_band": ">24k 字符",
+      "retrieval_limited": true,
+      "rules": [
+        {
+          "rule": "定价清晰度",
+          "categories": [
+            "Price Restrictions",
+            "Minimum Commitment",
+            "Revenue/Profit Sharing"
+          ],
+          "expert_present": true,
+          "expert_spans": 3,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 1,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "审计权",
+          "categories": [
+            "Audit Rights"
+          ],
+          "expert_present": true,
+          "expert_spans": 2,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": true,
+          "citations_stored": 0,
+          "agreement": false,
+          "over_claim": false
+        },
+        {
+          "rule": "知识产权归属",
+          "categories": [
+            "Ip Ownership Assignment",
+            "Joint Ip Ownership"
+          ],
+          "expert_present": false,
+          "expert_spans": 0,
+          "cited_spans_hit": 0,
+          "localization_recall": null,
+          "engine_rating": "green",
+          "engine_claims_absence": false,
+          "citations_stored": 2,
+          "agreement": false,
+          "over_claim": true
+        },
+        {
+          "rule": "终止条款",
+          "categories": [
+            "Termination For Convenience",
+            "Notice Period To Terminate Renewal"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 1,
+          "localization_recall": 1.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 2,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "责任上限",
+          "categories": [
+            "Cap On Liability",
+            "Uncapped Liability"
+          ],
+          "expert_present": true,
+          "expert_spans": 6,
+          "cited_spans_hit": 1,
+          "localization_recall": 0.1667,
+          "engine_rating": "amber",
+          "engine_claims_absence": false,
+          "citations_stored": 1,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "违约补偿条款",
+          "categories": [
+            "Liquidated Damages",
+            "Warranty Duration"
+          ],
+          "expert_present": true,
+          "expert_spans": 10,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 2,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "适用法律",
+          "categories": [
+            "Governing Law"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": true,
+          "citations_stored": 0,
+          "agreement": false,
+          "over_claim": false
+        }
+      ],
+      "unjudged_rules": [],
+      "present_rules": 6,
+      "agreed_present": 4,
+      "absent_rules": 1,
+      "agreed_absent": 0,
+      "over_claims": 1,
+      "spans_total": 23,
+      "spans_hit": 2,
+      "citations_stored": 8,
+      "friendly_id": "CG-0007",
+      "latency_ms": 179306,
+      "usage": {
+        "model": "deepseek-flash",
+        "calls": 15,
+        "input_tokens": 44444,
+        "output_tokens": 34958,
+        "total_tokens": 79402,
+        "token_source": "api",
+        "estimated_cost_usd": 0.0368552,
+        "currency": "USD",
+        "pricing_source": "default_estimate"
+      },
+      "verdicts": 15
+    },
+    {
+      "title": "LegacyEducationAllianceInc_20200330_10-K_EX-10.18_12090678_EX-10.18_Development Agreement",
+      "chars": 46255,
+      "length_band": ">24k 字符",
+      "retrieval_limited": true,
+      "rules": [
+        {
+          "rule": "定价清晰度",
+          "categories": [
+            "Price Restrictions",
+            "Minimum Commitment",
+            "Revenue/Profit Sharing"
+          ],
+          "expert_present": true,
+          "expert_spans": 13,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 1,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "审计权",
+          "categories": [
+            "Audit Rights"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": true,
+          "citations_stored": 0,
+          "agreement": false,
+          "over_claim": false
+        },
+        {
+          "rule": "知识产权归属",
+          "categories": [
+            "Ip Ownership Assignment",
+            "Joint Ip Ownership"
+          ],
+          "expert_present": true,
+          "expert_spans": 2,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "amber",
+          "engine_claims_absence": false,
+          "citations_stored": 4,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "终止条款",
+          "categories": [
+            "Termination For Convenience",
+            "Notice Period To Terminate Renewal"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 2,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "责任上限",
+          "categories": [
+            "Cap On Liability",
+            "Uncapped Liability"
+          ],
+          "expert_present": true,
+          "expert_spans": 2,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 1,
+          "agreement": true,
+          "over_claim": false
+        },
+        {
+          "rule": "违约补偿条款",
+          "categories": [
+            "Liquidated Damages",
+            "Warranty Duration"
+          ],
+          "expert_present": false,
+          "expert_spans": 0,
+          "cited_spans_hit": 0,
+          "localization_recall": null,
+          "engine_rating": "red",
+          "engine_claims_absence": false,
+          "citations_stored": 2,
+          "agreement": false,
+          "over_claim": true
+        },
+        {
+          "rule": "适用法律",
+          "categories": [
+            "Governing Law"
+          ],
+          "expert_present": true,
+          "expert_spans": 1,
+          "cited_spans_hit": 0,
+          "localization_recall": 0.0,
+          "engine_rating": "red",
+          "engine_claims_absence": true,
+          "citations_stored": 0,
+          "agreement": false,
+          "over_claim": false
+        }
+      ],
+      "unjudged_rules": [],
+      "present_rules": 6,
+      "agreed_present": 4,
+      "absent_rules": 1,
+      "agreed_absent": 0,
+      "over_claims": 1,
+      "spans_total": 20,
+      "spans_hit": 0,
+      "citations_stored": 10,
+      "friendly_id": "CG-0008",
+      "latency_ms": 251133,
+      "usage": {
+        "model": "deepseek-flash",
+        "calls": 15,
+        "input_tokens": 54893,
+        "output_tokens": 26692,
+        "total_tokens": 81585,
+        "token_source": "api",
+        "estimated_cost_usd": 0.0323322,
+        "currency": "USD",
+        "pricing_source": "default_estimate"
+      },
+      "verdicts": 15
+    }
+  ]
+}

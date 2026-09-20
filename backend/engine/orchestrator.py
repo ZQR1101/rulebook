@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 from backend.documents.audit import record_audit
 from backend.documents.models import Clause, Document, EngineRun, Rule, Verdict
 from backend.documents.service import source_dir
-from backend.engine.parsing import DocumentParseError, parse_document
+from backend.engine.parsing import DocumentParseError, parse_document, reviewability
 from backend.engine.scorecard import build_scorecard
 from backend.engine.scoring import score_rule
 from backend.playbooks import get_playbook
@@ -83,6 +83,9 @@ def run_review(document_id: str, *, trigger: str = "upload", custom_llm=None) ->
             if not source_files:
                 raise DocumentParseError("找不到原始文档文件")
             parsed = parse_document(source_files[0])
+            blocked = reviewability(parsed)
+            if blocked:
+                raise DocumentParseError(blocked)
         except DocumentParseError as exc:
             _fail(session, document, engine_run, "parse", str(exc), stages, started)
             raise

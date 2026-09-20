@@ -51,6 +51,43 @@ class DocumentParseError(Exception):
     """Raised when the document cannot be parsed into usable text."""
 
 
+# A playbook scores a dozen-plus rules against the clauses it can find. With
+# fewer recovered clauses than that, every rule degenerates into "not found"
+# and the scorecard reports a parse failure as if it were contract risk.
+MIN_REVIEW_CLAUSES = 3
+
+
+def reviewability_reason(clause_count: int, chars: int) -> str | None:
+    """Why this document must not be scored, or None when it can be.
+
+    Keyed on recovered clause count, not length: a short but properly split
+    contract is reviewable, while a stub produces a meaningless all-red
+    scorecard that still costs a reviewer the whole sign-off queue.
+    """
+
+    from backend.config import read_positive_int_env
+
+    minimum = read_positive_int_env("MIN_REVIEW_CLAUSES", MIN_REVIEW_CLAUSES)
+    if clause_count == 0:
+        return (
+            f"未解析出任何条款（正文 {chars} 字符）："
+            "疑为扫描件需要 OCR、加密 PDF，或上传的不是可评审文本"
+        )
+    if clause_count < minimum:
+        return (
+            f"只解析出 {clause_count} 段条款 / {chars} 字符正文，低于可评审下限 {minimum} 段："
+            "逐条核对无从进行，疑为条款未能切分（解析失败）或文档类型不符"
+        )
+    return None
+
+
+def reviewability(parsed: ParsedDocument) -> str | None:
+    return reviewability_reason(
+        len(parsed.clauses),
+        sum(len(clause.text) for clause in parsed.clauses),
+    )
+
+
 def _extract_raw_text(path, suffix: str) -> tuple[str, str, int | None, list[str]]:
     """Return (text, method, page_count, warnings)."""
 

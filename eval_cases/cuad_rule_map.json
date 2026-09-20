@@ -1,0 +1,47 @@
+{
+  "source": "CUAD v1 (The-Atticus-Project/cuad, arXiv:2103.06268) — expert-annotated contract review set, 510 contracts x 41 categories",
+  "playbook_id": "contract-compliance",
+  "semantics": "CUAD answers 'is this category present, and which spans' per contract. It carries no severity, so it can only check whether our engine finds the right clause and reports absence correctly — never whether our red/amber/green cut is legally right.",
+  "usage": "Internal evaluation only. The CUAD repository ships no LICENSE file, so its terms are unverified here; nothing from this corpus may be redistributed or bundled into a release.",
+  "note": "Category names below are the identifiers used in CUADv1.json's question ids (e.g. 'Cap On Liability'). The repository's category_descriptions.csv displays them with different casing ('Cap on Liability'), so match on these strings.",
+  "rules": {
+    "责任上限": {
+      "cuad_categories": ["Cap On Liability", "Uncapped Liability"],
+      "note": "CUAD splits the two poles of our rule: a capped liability clause vs an uncapped one. Our 责任上限 is green exactly when a real cap exists."
+    },
+    "审计权": {
+      "cuad_categories": ["Audit Rights"],
+      "note": "One-to-one: CUAD asks whether a party may audit the counterparty's books/records/locations."
+    },
+    "终止条款": {
+      "cuad_categories": ["Termination For Convenience", "Notice Period To Terminate Renewal"],
+      "note": "CUAD marks termination-for-convenience and renewal-notice periods; our rule weights bilateral termination rights plus notice periods."
+    },
+    "适用法律": {
+      "cuad_categories": ["Governing Law"],
+      "note": "CUAD extracts the governing law; our rule additionally judges whether it is our home jurisdiction, which CUAD does not label."
+    },
+    "知识产权归属": {
+      "cuad_categories": ["Ip Ownership Assignment", "Joint Ip Ownership"],
+      "note": "Assignment to one party vs joint ownership map onto our green/yellow split; CUAD has no 'vendor keeps everything' label."
+    },
+    "违约补偿条款": {
+      "cuad_categories": ["Liquidated Damages", "Warranty Duration"],
+      "note": "Closest available: pre-agreed damages and warranty terms stand in for our service-credit check. Approximate — read presence-only."
+    },
+    "定价清晰度": {
+      "cuad_categories": ["Price Restrictions", "Minimum Commitment", "Revenue/Profit Sharing"],
+      "note": "CUAD labels price-related commitments, not whether pricing is unambiguous. Weakest mapping; presence-only."
+    }
+  },
+  "rules_without_external_label": [
+    "付款账期",
+    "交付与验收条款",
+    "数据保护义务",
+    "数据泄露通知",
+    "数据存储地",
+    "可用性承诺",
+    "响应时限",
+    "分包披露"
+  ]
+}

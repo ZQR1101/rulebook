@@ -137,6 +137,7 @@ def init_platform_db() -> None:
     engine = get_platform_engine()
     PlatformBase.metadata.create_all(engine)
     _add_missing_columns(engine)
+    _backfill_initial_rating(engine)
 
     with platform_session() as session:
         _seed_playbook_rules(session)
@@ -165,6 +166,37 @@ def _add_missing_columns(engine: Engine) -> None:
                 continue
             connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}"))
             logger.info("schema: added %s.%s", table, column)
+
+
+def _backfill_initial_rating(engine: Engine) -> None:
+    """Give legacy verdicts a recoverable AI baseline.
+
+    ``initial_rating`` shipped after thousands of rows existed. If no expert ever
+    edited a verdict, the stored rating still *is* the engine's judgement, so the
+    baseline can be recovered instead of being reported as unknown forever; an
+    edited verdict's original grade is genuinely lost and stays NULL.
+    """
+
+    from sqlalchemy import inspect, text
+
+    tables = set(inspect(engine).get_table_names())
+    if not {"verdicts", "review_events"} <= tables:
+        return
+    with engine.begin() as connection:
+        result = connection.execute(
+            text(
+                """
+                UPDATE verdicts SET initial_rating = rating
+                WHERE initial_rating IS NULL
+                  AND id NOT IN (
+                      SELECT verdict_id FROM review_events
+                      WHERE action = 'edit' AND verdict_id IS NOT NULL
+                  )
+                """
+            )
+        )
+        if result.rowcount:
+            logger.info("schema: recovered AI baseline on %d legacy verdicts", result.rowcount)
 
 
 def _ensure_bootstrap_admin(session: Session) -> None:

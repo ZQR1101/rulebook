@@ -75,7 +75,8 @@ class TestInboxIntake:
 
     def test_unsettled_file_waits(self, client, inbox, fake_llm):
         path = inbox["dir"] / "growing.txt"
-        path.write_text("一半内容", encoding="utf-8")
+        # 内容必须可评审：入库闸会拒绝切不出 3 段条款的正文，本测试只验 settle 等待
+        path.write_text(SAMPLE_CONTRACT, encoding="utf-8")
         stats = _poll(settle=2.0)
         assert stats.pending == 1
         assert stats.ingested == 0

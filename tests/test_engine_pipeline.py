@@ -195,7 +195,11 @@ class TestFailurePath:
             assert "无法解析" in verdict["rationale"]
 
     def test_gap_rules_turn_red_with_reason(self, client, admin_headers, monkeypatch):
-        empty_doc = "一份没有实质条款的文档，仅此而已。"
+        thin_doc = (
+            "项目服务合同\n\n第1条 服务内容\n乙方提供现场培训服务。\n\n"
+            "第2条 合同期限\n本合同自签署之日起一年内有效。\n\n"
+            "第3条 争议解决\n双方协商不成时提交签署地人民法院。\n"
+        )
         monkeypatch.setattr(
             "backend.engine.scoring._default_scoring_llm",
             lambda: FakeLLM(
@@ -207,13 +211,27 @@ class TestFailurePath:
                 }
             ),
         )
-        upload = _upload(client, admin_headers, "empty.txt", empty_doc.encode("utf-8"))
+        upload = _upload(client, admin_headers, "empty.txt", thin_doc.encode("utf-8"))
         document_id = upload.json()["document_id"]
         detail = client.get(f"/documents/{document_id}", headers=admin_headers).json()
         reds = [v for v in detail["verdicts"] if v["rating"] == "red"]
         assert reds
         assert all(v["gap_reason"] for v in reds)
         assert detail["document"]["scorecard"]["counts"]["red"] == len(reds)
+
+    def test_intake_gate_refuses_a_stub_document(self, client, admin_headers, fake_llm):
+        """A 21-character stub must not become 15 red verdicts in someone's queue."""
+
+        stub = "软件开发合同 本合同约定开发一套演示系统。"
+        upload = _upload(client, admin_headers, "stub.txt", stub.encode("utf-8"))
+        assert upload.status_code == 202, upload.text
+        document_id = upload.json()["document_id"]
+
+        detail = client.get(f"/documents/{document_id}", headers=admin_headers).json()
+        assert detail["document"]["status"] == "failed"
+        assert "可评审下限" in detail["document"]["status_reason"]
+        assert detail["verdicts"] == []
+        assert fake_llm.calls == []  # refused before any model spend
 
     def test_green_without_citation_downgraded(self, client, admin_headers, monkeypatch):
         monkeypatch.setattr(

@@ -277,9 +277,55 @@ class TestBaselineColumn:
     def test_missing_table_is_skipped_not_fatal(self, tmp_path):
         from sqlalchemy import create_engine, inspect
 
-        from backend.platform_db import _add_missing_columns
+        from backend.platform_db import _add_missing_columns, _backfill_initial_rating
 
         engine = create_engine(f"sqlite:///{tmp_path / 'empty.db'}")
         _add_missing_columns(engine)  # nothing to alter yet, startup must not break
+        _backfill_initial_rating(engine)
         assert inspect(engine).get_table_names() == []
+        engine.dispose()
+
+    def test_unedited_legacy_verdicts_get_their_baseline_back(self, tmp_path):
+        from sqlalchemy import create_engine, text
+
+        from backend.platform_db import _backfill_initial_rating
+
+        engine = create_engine(f"sqlite:///{tmp_path / 'legacy.db'}")
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    "CREATE TABLE verdicts (id VARCHAR(36) PRIMARY KEY, "
+                    "rating VARCHAR(10), initial_rating VARCHAR(10))"
+                )
+            )
+            connection.execute(
+                text(
+                    "CREATE TABLE review_events (id VARCHAR(36) PRIMARY KEY, "
+                    "verdict_id VARCHAR(36), action VARCHAR(50))"
+                )
+            )
+            connection.execute(text("INSERT INTO verdicts (id, rating) VALUES ('kept', 'amber')"))
+            connection.execute(text("INSERT INTO verdicts (id, rating) VALUES ('moved', 'red')"))
+            connection.execute(
+                text(
+                    "INSERT INTO review_events (id, verdict_id, action) "
+                    "VALUES ('e1', 'moved', 'edit')"
+                )
+            )
+
+        _backfill_initial_rating(engine)
+
+        with engine.connect() as connection:
+            baselines = dict(
+                connection.execute(text("SELECT id, initial_rating FROM verdicts")).fetchall()
+            )
+        # Only an untouched verdict still holds the engine's own grade. An edited
+        # one has lost it, so it must stay in the "unknown baseline" bucket.
+        assert baselines == {"kept": "amber", "moved": None}
+
+        _backfill_initial_rating(engine)  # idempotent re-run on startup
+        with engine.connect() as connection:
+            assert connection.execute(
+                text("SELECT COUNT(*) FROM verdicts WHERE initial_rating IS NULL")
+            ).scalar() == 1
         engine.dispose()
