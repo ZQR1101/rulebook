@@ -386,3 +386,100 @@ def test_every_seeded_case_is_engine_compatible(offline_env):
         assert metrics["coverage_ok"] is True, case["id"]
         assert metrics["rules_scored"] == metrics["rules_annotated"], case["id"]
         assert result["scoring_failures"] in (0, None), case["id"]
+
+
+def test_retry_after_a_dropped_call_reaches_the_engine(offline_env, monkeypatch):
+    """A connection drop must cost one case, not the rest of the run.
+
+    Observed on a real pass: attempt two raised 「该文档内容此前已入库」 instead
+    of re-scoring, because the retry only rebound the engine to the *same* temp
+    file — which still held the documents the earlier cases ingested.
+    """
+
+    import scripts.evaluate_seeded_defects as harness
+
+    real_run_case = harness.run_case
+    attempts: list[str] = []
+
+    def dropped_after_ingesting(case, *, fake=None, model=None, temperature=None):
+        result = real_run_case(case, fake=fake, model=model, temperature=temperature)
+        attempts.append(case["id"])
+        if len(attempts) == 1:
+            raise ConnectionError("APIConnectionError: Connection error")
+        return result
+
+    monkeypatch.setattr(harness, "run_case", dropped_after_ingesting)
+    monkeypatch.setattr(harness.time, "sleep", lambda seconds: None)
+
+    result = harness._run_case_with_retry(
+        CASE_BY_ID["CG-SEED-02"],
+        fake="all_red",
+        attempts=3,
+        model=None,
+        temperature=harness.EVAL_TEMPERATURE,
+    )
+
+    assert len(attempts) == 2
+    assert result["run_status"] == "succeeded"
+
+
+def test_evaluation_decoding_reaches_the_client_not_just_the_flag(monkeypatch):
+    """A pinned constant that never reaches the client fixes nothing."""
+
+    import backend.llm_service as llm_service
+    from scripts.evaluate_seeded_defects import EVAL_TEMPERATURE, _eval_llm
+
+    captured = {}
+
+    def fake_build_llm(model=None, temperature=None, max_tokens=None):  # noqa: ARG001
+        captured["model"] = model
+        captured["temperature"] = temperature
+        return object()
+
+    monkeypatch.setattr(llm_service, "build_llm", fake_build_llm)
+
+    _eval_llm("deepseek-flash", EVAL_TEMPERATURE)
+
+    assert captured == {"model": "deepseek-flash", "temperature": EVAL_TEMPERATURE}
+
+
+def test_report_names_the_decoding_temperature(offline_env, monkeypatch):
+    """The run conditions belong in the artifact, not only in the invocation."""
+
+    import scripts.evaluate_seeded_defects as harness
+    from scripts.evaluate_seeded_defects import AllRedFakeLLM
+
+    # Canned oracle, real-mode bookkeeping: the header must reflect the
+    # temperature the run was *told* to use without calling anybody.
+    monkeypatch.setattr(harness, "_eval_llm", lambda model, temperature: AllRedFakeLLM())
+
+    result = harness.run_case(
+        CASE_BY_ID["CG-SEED-02"], fake=None, model="deepseek-flash", temperature=0.3
+    )
+    assert "判定温度：0.3" in harness.render_markdown([result], fake=None)
+
+    # A canned oracle does not sample, so it must not claim a decoding setting.
+    fake_result = harness.run_case(CASE_BY_ID["CG-SEED-03"], fake="all_red")
+    assert "判定温度" not in harness.render_markdown([fake_result], fake="all_red")
+
+
+def test_noise_section_needs_two_passes_to_exist(offline_env):
+    """The spread is a property of repeated runs, so one run must not print one."""
+
+    import copy
+
+    from scripts.evaluate_seeded_defects import _noise_section, run_case
+
+    first = run_case(CASE_BY_ID["CG-SEED-02"], fake="all_red")
+
+    assert _noise_section([first]) == []
+    assert _noise_section(None) == []
+
+    second = copy.deepcopy(first)
+    for detail in second["metrics"]["details"]:
+        if detail["kind"] == "clean":
+            detail["actual"] = "green"  # a cleaner second pass, without paying for one
+
+    section = "\n".join(_noise_section([[first], [second]]))
+    assert "## 轮间噪声（2 轮独立运行）" in section
+    assert "| 误报率 |" in section and "| 均值 | 极差 |" in section

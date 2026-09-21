@@ -44,9 +44,11 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.evaluate_seeded_defects import (  # noqa: E402  (shared harness helpers)
     AllRedFakeLLM,
+    EVAL_TEMPERATURE,
     HallucinatedGreenFakeLLM,
     _describe_error,
     _engine_run_meta,
+    _eval_llm,
     _isolated_env,
     _money,
     _pct,
@@ -325,9 +327,7 @@ def run_contract(contract: dict, *, model: str, fake: str | None = None) -> dict
     elif fake == "green_hallucinated":
         inner = HallucinatedGreenFakeLLM()
     else:
-        from backend.llm_service import build_llm
-
-        inner = build_llm(model=model)
+        inner = _eval_llm(model)
     llm = _tracked_llm(inner, model)
     started = time.perf_counter()
     run_review(document_id, trigger="external-gold", custom_llm=llm)
@@ -359,7 +359,13 @@ def render_markdown(results: list[dict], *, model: str, failed: list[str], fake:
         "# 外部专家金标对照（CUAD）",
         "",
         f"生成时间：{datetime.now(timezone.utc).isoformat()}",
-        f"评分模型：{scored_by}",
+        f"评分模型：{scored_by}"
+        + (
+            ""
+            if fake
+            else f" · 判定温度：{EVAL_TEMPERATURE:g}"
+            "（贪心解码以保证可复现；线上引擎默认 0.7）"
+        ),
         f"条款检索：{ _format_modes(overall['retrieval_modes']) }"
         f"（单条规则最多可见 {RETRIEVAL_BUDGET_CHARS} 字符）",
         f"语料：CUAD v1（510 份真实商业协议，律师标注）中取 {overall['contracts']} 份",

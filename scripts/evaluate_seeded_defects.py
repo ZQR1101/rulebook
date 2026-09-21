@@ -46,6 +46,13 @@ METRICS_PATH = PROJECT_ROOT / "reports" / "SEEDED_DEFECT_EVAL_METRICS.json"
 FLAGGED = ("red", "amber")
 _RULE_LINE_RE = re.compile(r"- 规则：(.+)")
 
+# Measured on one fixed corpus: three passes today returned 2, 5 and 6 false
+# positives out of 33 clean clauses. A single pass therefore cannot resolve a
+# change of that size, so the baseline is several passes plus a reported spread.
+# Decoding stays at the online default so the number describes what reviewers
+# actually see; pass --temperature 0 for a reproducible greedy comparison.
+EVAL_TEMPERATURE = 0.7
+
 
 # --------------------------------------------------------------------------- gold
 
@@ -468,7 +475,21 @@ def _engine_run_meta(document_id: str) -> dict:
         session.close()
 
 
-def run_case(case: dict, *, fake: str | None, model: str | None = None) -> dict:
+def _eval_llm(model: str, temperature: float = EVAL_TEMPERATURE):
+    """Scoring client for evaluation runs, with the decoding set explicitly."""
+
+    from backend.llm_service import build_llm
+
+    return build_llm(model=model, temperature=temperature)
+
+
+def run_case(
+    case: dict,
+    *,
+    fake: str | None,
+    model: str | None = None,
+    temperature: float = EVAL_TEMPERATURE,
+) -> dict:
     from backend.documents.models import Rule
     from backend.documents.service import create_document
     from backend.engine.orchestrator import run_review
@@ -500,9 +521,7 @@ def run_case(case: dict, *, fake: str | None, model: str | None = None) -> dict:
     elif fake == "green_hallucinated":
         inner = HallucinatedGreenFakeLLM()
     else:
-        from backend.llm_service import build_llm
-
-        inner = build_llm(model=selected_model)
+        inner = _eval_llm(selected_model, temperature)
     # Recorded in every mode: --fake exists to prove the citation metrics work,
     # and they need the pre-gate emissions.
     recorder = RecordingLLM(inner, document_text)
@@ -546,6 +565,7 @@ def run_case(case: dict, *, fake: str | None, model: str | None = None) -> dict:
         "wall_ms": wall_ms,
         "latency_ms": int(meta.get("latency_ms") or wall_ms),
         "retrieval_mode": meta.get("retrieval_mode"),
+        "run_temperature": None if fake else temperature,
         "run_status": meta.get("run_status"),
         "scoring_failures": meta.get("scoring_failures"),
         "usage": _usage_summary(llm, selected_model),
@@ -573,11 +593,25 @@ def _reset_database() -> None:
     init_platform_db()
 
 
-def _run_case_with_retry(case: dict, *, fake: str | None, attempts: int, model: str | None) -> dict:
+def _fresh_isolated_database() -> None:
+    """Move to an empty database, so stored documents really do disappear.
+
+    ``reset_platform_db`` only rebinds the engine: re-initialising the same temp
+    file keeps the documents the finished cases ingested, and the next attempt
+    then dies on the duplicate-content guard instead of reaching the engine.
+    """
+
+    _isolated_env()
+    _reset_database()
+
+
+def _run_case_with_retry(
+    case: dict, *, fake: str | None, attempts: int, model: str | None, temperature: float
+) -> dict:
     attempt = 1
     while True:
         try:
-            return run_case(case, fake=fake, model=model)
+            return run_case(case, fake=fake, model=model, temperature=temperature)
         except Exception as exc:  # noqa: BLE001 — one flaky API call must not eat the run
             if attempt >= attempts:
                 raise
@@ -587,10 +621,10 @@ def _run_case_with_retry(case: dict, *, fake: str | None, attempts: int, model: 
                 flush=True,
             )
             time.sleep(5 * attempt)
-            # Finished cases are already materialised metric dicts, so wiping the
-            # isolated database is safe — and required, or the retry hits the
-            # duplicate-content guard instead of the engine.
-            _reset_database()
+            # Finished cases are already materialised metric dicts, so starting
+            # over on an empty database is safe — and required, or the retry hits
+            # the duplicate-content guard instead of the engine.
+            _fresh_isolated_database()
             attempt += 1
 
 
@@ -610,7 +644,66 @@ def _counts(results: list[dict], bucket: str, predicate) -> str:
     return f"{hit}/{total}" if total else "—"
 
 
-def render_markdown(results: list[dict], *, fake: str | None, failed: list[str] | None = None) -> str:
+def _temperature_line(results: list[dict]) -> list[str]:
+    recorded = (result.get("run_temperature") for result in results)
+    temperatures = sorted({value for value in recorded if value is not None})
+    if not temperatures:
+        return []
+    shown = " / ".join(f"{value:g}" for value in temperatures)
+    note = "（与线上一致）" if temperatures == [0.7] else "（非线上默认，数字不可与基线互换）"
+    return [f"判定温度：{shown}{note}"]
+
+
+_NOISE_METRICS = (
+    ("defect_recall", "缺陷召回"),
+    ("gap_recall", "缺口召回"),
+    ("false_positive_rate", "误报率"),
+    ("exact_agreement", "整体等级一致率"),
+    ("citation_genuineness", "引用真实率"),
+)
+
+
+def _noise_section(passes: list[list[dict]] | None) -> list[str]:
+    """Run-to-run spread, because one pass of a sampling model is not a measurement.
+
+    Observed on this corpus: three passes returned 2, 5 and 6 false positives out
+    of 33 clean clauses. Without the spread, a change of that size reads as a
+    regression or a win depending on which run was kept.
+    """
+
+    if not passes or len(passes) < 2:
+        return []
+    summary = [aggregate(items) for items in passes]
+    lines = [
+        f"## 轮间噪声（{len(passes)} 轮独立运行）",
+        "",
+        "同一份语料、同一套代码、同一模型，逐轮各跑一遍；极差就是本报告的读数误差。",
+        "",
+        "| 指标 | " + " | ".join(f"第 {index} 轮" for index in range(1, len(passes) + 1)) + " | 均值 | 极差 |",
+        "|---|" + "---:|" * (len(passes) + 2),
+    ]
+    for key, label in _NOISE_METRICS:
+        values = [item[key] for item in summary]
+        present = [value for value in values if value is not None]
+        if not present:
+            continue
+        spread = max(present) - min(present)
+        lines.append(
+            f"| {label} | "
+            + " | ".join(_pct(value) for value in values)
+            + f" | {_pct(sum(present) / len(present))} | {_pct(spread)} |"
+        )
+    lines.append("")
+    return lines
+
+
+def render_markdown(
+    results: list[dict],
+    *,
+    fake: str | None,
+    failed: list[str] | None = None,
+    passes: list[list[dict]] | None = None,
+) -> str:
     overall = aggregate(results)
     mode = {"all_red": "MechanicsFake · 全红", "green_hallucinated": "MechanicsFake · 幻觉绿色"}.get(
         fake or "", "真实 LLM"
@@ -620,8 +713,11 @@ def render_markdown(results: list[dict], *, fake: str | None, failed: list[str] 
         "",
         f"生成时间：{datetime.now(timezone.utc).isoformat()}",
         f"运行模式：**{mode}**" + ("（机制验证，不代表引擎能力）" if fake else ""),
-        f"语料：{len(results)} 份合成文档 / {overall['rules_scored']} 条规则判定",
+        f"语料：{len(max(passes, key=len)) if passes else len(results)} 份合成文档"
+        + (f" × {len(passes)} 轮" if passes and len(passes) > 1 else "")
+        + f" / {overall['rules_scored']} 条规则判定",
         f"条款检索：{', '.join(sorted({str(r['retrieval_mode']) for r in results}))}",
+        *_temperature_line(results),
         f"评分模型：**{', '.join(overall['models']) or '—'}** · {overall['llm_calls']} 次调用 · "
         f"tokens {overall['input_tokens']}/{overall['output_tokens']}（{overall['token_source']}） · "
         f"预估 {_money(overall['estimated_cost_usd'])}（{overall['pricing_source']}）",
@@ -654,8 +750,9 @@ def render_markdown(results: list[dict], *, fake: str | None, failed: list[str] 
         f"| 引用门拦截率 | {_pct(overall['gate_catch_rate'])} | "
         f"{overall['unsupported_green_caught']}/{overall['unsupported_green_total']} "
         "| 无有效引用的绿色判定被降级为黄的比例 |",
-        f"| 时延 | {overall['total_latency_ms']} ms | {len(results)} docs | 引擎端到端 |",
+        f"| 时延 | {overall['total_latency_ms']} ms | {len(results)} 次文档评审 | 引擎端到端 |",
         "",
+        *_noise_section(passes),
         "## 分文档",
         "",
         "| Case | 剧本 | 缺陷召回 | 缺口召回 | 误报率 | 等级一致 | 引用真实 | 拦截 | 风险指数 | 时延 | 预估 |",
@@ -772,6 +869,18 @@ def main() -> int:
         choices=("keyword", "semantic", "hybrid"),
         help="子句检索模式；默认沿用 RETRIEVAL_MODE（hybrid）",
     )
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=EVAL_TEMPERATURE,
+        help=f"判定采样温度（默认 {EVAL_TEMPERATURE:g}，与线上一致；0 为可复现的贪心解码）",
+    )
+    parser.add_argument(
+        "--repeat",
+        type=int,
+        default=1,
+        help="整套语料独立重复几轮并报轮间极差；判定是采样的，单轮不足以当基线（基线建议 3）",
+    )
     parser.add_argument("--list", action="store_true", help="列出用例后退出")
     parser.add_argument(
         "--live-db",
@@ -802,7 +911,7 @@ def main() -> int:
     except ValueError as exc:
         print(f"[FAIL] {exc}")
         return 1
-    print(f"[INFO] 评分模型：{selected_model}", flush=True)
+    print(f"[INFO] 评分模型：{selected_model} · 判定温度：{args.temperature:g}", flush=True)
     if args.retrieval:
         os.environ["RETRIEVAL_MODE"] = args.retrieval
     elif args.fake:
@@ -812,30 +921,59 @@ def main() -> int:
         _isolated_env()
         _reset_database()
 
+    if args.repeat > 1 and args.live_db:
+        print("[FAIL] --repeat 不能与 --live-db 同用：重复轮次会在内容去重闸上被拒。")
+        return 1
+
     # A live pass is ~15 API calls per document; one dropped connection used to
     # discard every case that had already finished. Retry, and keep what works.
     attempts = 1 if (args.fake or args.live_db) else 3
     results: list[dict] = []
+    passes: list[list[dict]] = []
     failed: list[str] = []
-    for case in cases:
-        try:
-            results.append(_run_case_with_retry(case, fake=args.fake, attempts=attempts, model=selected_model))
-        except Exception as exc:  # noqa: BLE001 — reported below, not re-raised
-            print(f"[FAIL] {case['id']}：{_describe_error(exc)}", flush=True)
-            failed.append(case["id"])
+    for index in range(args.repeat):
+        if index:
+            # Same fixtures again, so the store has to be empty or pass two dies
+            # on the duplicate-content guard instead of measuring anything.
+            _fresh_isolated_database()
+        if args.repeat > 1:
+            print(f"[INFO] 第 {index + 1}/{args.repeat} 轮", flush=True)
+        this_pass: list[dict] = []
+        for case in cases:
+            try:
+                this_pass.append(
+                    _run_case_with_retry(
+                        case,
+                        fake=args.fake,
+                        attempts=attempts,
+                        model=selected_model,
+                        temperature=args.temperature,
+                    )
+                )
+            except Exception as exc:  # noqa: BLE001 — reported below, not re-raised
+                print(f"[FAIL] {case['id']}：{_describe_error(exc)}", flush=True)
+                if case["id"] not in failed:
+                    failed.append(case["id"])
+        results.extend(this_pass)
+        passes.append(this_pass)
     if not results:
         print("所有用例均未完成，报告未写入。")
         return 1
 
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text(
-        render_markdown(results, fake=args.fake, failed=failed), encoding="utf-8"
+        render_markdown(results, fake=args.fake, failed=failed, passes=passes),
+        encoding="utf-8",
     )
     METRICS_PATH.write_text(
         json.dumps(
             {"generated_at": datetime.now(timezone.utc).isoformat(), "fake": args.fake,
-             "model": selected_model, "failed_cases": failed,
-             "overall": aggregate(results), "results": results},
+             "model": selected_model, "temperature": args.temperature,
+             "retrieval_mode": os.environ.get("RETRIEVAL_MODE"),
+             "failed_cases": failed,
+             "overall": aggregate(results),
+             "passes": [aggregate(items) for items in passes],
+             "results": results},
             ensure_ascii=False,
             indent=2,
         ),
@@ -843,6 +981,17 @@ def main() -> int:
     )
     overall = aggregate(results)
     print(f"Wrote {REPORT_PATH}")
+    if len(passes) > 1:
+        rates = [
+            value
+            for value in (aggregate(items)["false_positive_rate"] for items in passes)
+            if value is not None
+        ]
+        if len(rates) > 1:
+            print(
+                f"[INFO] 误报率逐轮：{' '.join(_pct(value) for value in rates)}"
+                f" · 极差 {_pct(max(rates) - min(rates))}（单轮差值小于此数不可解读）"
+            )
     print(
         f"缺陷召回 {_pct(overall['defect_recall'])} · 缺口召回 {_pct(overall['gap_recall'])} · "
         f"误报率 {_pct(overall['false_positive_rate'])} · 引用真实率 {_pct(overall['citation_genuineness'])} · "
