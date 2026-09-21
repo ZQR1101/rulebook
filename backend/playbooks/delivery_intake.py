@@ -81,7 +81,9 @@ DELIVERY_INTAKE_PLAYBOOK = PlaybookSpec(
     rule_seeds=_DELIVERY_INTAKE_RULES,
     deliverables=("discovery_brief_docx", "handover_docx"),
     scoring_instructions=(
-        "你是客户交付件风险分析代理。对每条资质标准：在客户提交文档中寻找对应内容，"
+        "你是客户交付件风险分析代理。本剧本站在我方立场，我方＝交付方/服务提供方（文档中的乙方），"
+        "客户为甲方；guidance 中的「我方」「客户方」一律按此对应，不得从文档行文推测立场。"
+        "对每条资质标准：在客户提交文档中寻找对应内容，"
         "按规则 guidance 给出 red/amber/green 判定；判定必须引用文档原文片段；"
         "文档中找不到对应内容时判 red 并说明缺失（gap_reason），并标注该缺失应向客户追问什么。"
     ),

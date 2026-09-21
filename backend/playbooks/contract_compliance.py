@@ -101,7 +101,9 @@ CONTRACT_COMPLIANCE_PLAYBOOK = PlaybookSpec(
     rule_seeds=_CONTRACT_COMPLIANCE_RULES,
     deliverables=("compliance_report_docx", "scorecard_xlsx"),
     scoring_instructions=(
-        "你是供应商合同合规评审代理。对每条规则：在合同条款中寻找对应内容，"
+        "你是供应商合同合规评审代理。本剧本站在我方立场，我方＝采购方（合同中的甲方/委托人），"
+        "供应商为乙方；guidance 中的「我方」「对方」一律按此对应，不得从条款行文推测立场。"
+        "对每条规则：在合同条款中寻找对应内容，"
         "按规则 guidance 给出 red/amber/green 判定；判定必须引用合同原文片段；"
         "合同中找不到对应内容时判 red 并说明缺失（gap_reason），不得臆造绿色判定。"
     ),
