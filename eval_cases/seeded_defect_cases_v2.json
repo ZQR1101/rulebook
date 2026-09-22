@@ -4,7 +4,7 @@
       "id": "CG-V2-01",
       "title": "华宁轨道交通集团有限公司业财一体化平台采购项目合同",
       "playbook_id": "contract-compliance",
-      "document": "eval_cases\\seeded_defects_v2\\CG-V2-01.txt",
+      "document": "eval_cases/seeded_defects_v2/CG-V2-01.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -96,7 +96,7 @@
       "id": "CG-V2-02",
       "title": "澜溪水务集团有限公司视频监控联网系统采购项目合同",
       "playbook_id": "contract-compliance",
-      "document": "eval_cases\\seeded_defects_v2\\CG-V2-02.txt",
+      "document": "eval_cases/seeded_defects_v2/CG-V2-02.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -188,7 +188,7 @@
       "id": "CG-V2-03",
       "title": "盛通石化炼油有限公司数据治理平台采购项目合同",
       "playbook_id": "contract-compliance",
-      "document": "eval_cases\\seeded_defects_v2\\CG-V2-03.txt",
+      "document": "eval_cases/seeded_defects_v2/CG-V2-03.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -280,7 +280,7 @@
       "id": "CG-V2-04",
       "title": "长风能源化工有限责任公司智慧运维管理平台采购项目合同",
       "playbook_id": "contract-compliance",
-      "document": "eval_cases\\seeded_defects_v2\\CG-V2-04.txt",
+      "document": "eval_cases/seeded_defects_v2/CG-V2-04.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -368,7 +368,7 @@
       "id": "CG-V2-05",
       "title": "江州医药控股集团有限责任公司智慧运维管理平台采购项目合同",
       "playbook_id": "contract-compliance",
-      "document": "eval_cases\\seeded_defects_v2\\CG-V2-05.txt",
+      "document": "eval_cases/seeded_defects_v2/CG-V2-05.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -464,7 +464,7 @@
       "id": "CG-V2-06",
       "title": "南岭烟草有限责任公司报表与分析平台采购项目合同",
       "playbook_id": "contract-compliance",
-      "document": "eval_cases\\seeded_defects_v2\\CG-V2-06.txt",
+      "document": "eval_cases/seeded_defects_v2/CG-V2-06.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -552,7 +552,7 @@
       "id": "CG-V2-07",
       "title": "睿城城市投资发展集团供应链协同平台采购项目合同",
       "playbook_id": "contract-compliance",
-      "document": "eval_cases\\seeded_defects_v2\\CG-V2-07.txt",
+      "document": "eval_cases/seeded_defects_v2/CG-V2-07.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -640,7 +640,7 @@
       "id": "CG-V2-08",
       "title": "南岭烟草有限责任公司报表与分析平台采购项目合同",
       "playbook_id": "contract-compliance",
-      "document": "eval_cases\\seeded_defects_v2\\CG-V2-08.txt",
+      "document": "eval_cases/seeded_defects_v2/CG-V2-08.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -728,7 +728,7 @@
       "id": "CG-V2-09",
       "title": "启帆汽车制造有限公司档案数字化管理系统采购项目合同",
       "playbook_id": "contract-compliance",
-      "document": "eval_cases\\seeded_defects_v2\\CG-V2-09.txt",
+      "document": "eval_cases/seeded_defects_v2/CG-V2-09.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -816,7 +816,7 @@
       "id": "CG-V2-10",
       "title": "南岭烟草有限责任公司调度指挥系统采购项目合同",
       "playbook_id": "contract-compliance",
-      "document": "eval_cases\\seeded_defects_v2\\CG-V2-10.txt",
+      "document": "eval_cases/seeded_defects_v2/CG-V2-10.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -904,7 +904,7 @@
       "id": "CG-V2-11",
       "title": "中宸航空器材有限公司业财一体化平台采购项目合同",
       "playbook_id": "contract-compliance",
-      "document": "eval_cases\\seeded_defects_v2\\CG-V2-11.txt",
+      "document": "eval_cases/seeded_defects_v2/CG-V2-11.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -1000,7 +1000,7 @@
       "id": "CG-V2-12",
       "title": "昌原粮食储备有限责任公司风险监测预警系统采购项目合同",
       "playbook_id": "contract-compliance",
-      "document": "eval_cases\\seeded_defects_v2\\CG-V2-12.txt",
+      "document": "eval_cases/seeded_defects_v2/CG-V2-12.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -1092,7 +1092,7 @@
       "id": "CG-V2-13",
       "title": "同泰港口机械股份有限公司工单流转系统采购项目合同",
       "playbook_id": "contract-compliance",
-      "document": "eval_cases\\seeded_defects_v2\\CG-V2-13.txt",
+      "document": "eval_cases/seeded_defects_v2/CG-V2-13.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -1184,7 +1184,7 @@
       "id": "CG-V2-14",
       "title": "启帆汽车制造有限公司统一身份认证系统采购项目合同",
       "playbook_id": "contract-compliance",
-      "document": "eval_cases\\seeded_defects_v2\\CG-V2-14.txt",
+      "document": "eval_cases/seeded_defects_v2/CG-V2-14.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -1276,7 +1276,7 @@
       "id": "CG-V2-15",
       "title": "长风能源化工有限责任公司业财一体化平台采购项目合同",
       "playbook_id": "contract-compliance",
-      "document": "eval_cases\\seeded_defects_v2\\CG-V2-15.txt",
+      "document": "eval_cases/seeded_defects_v2/CG-V2-15.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -1372,7 +1372,7 @@
       "id": "CG-V2-16",
       "title": "临海港口物流股份有限公司临床数据中台采购项目合同",
       "playbook_id": "contract-compliance",
-      "document": "eval_cases\\seeded_defects_v2\\CG-V2-16.txt",
+      "document": "eval_cases/seeded_defects_v2/CG-V2-16.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -1460,7 +1460,7 @@
       "id": "DI-V2-01",
       "title": "云岭广电网络股份有限公司设备物联管理平台服务项目工作说明书",
       "playbook_id": "delivery-intake",
-      "document": "eval_cases\\seeded_defects_v2\\DI-V2-01.txt",
+      "document": "eval_cases/seeded_defects_v2/DI-V2-01.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -1536,7 +1536,7 @@
       "id": "DI-V2-02",
       "title": "晟元电力科学研究院智慧运维管理平台服务项目工作说明书",
       "playbook_id": "delivery-intake",
-      "document": "eval_cases\\seeded_defects_v2\\DI-V2-02.txt",
+      "document": "eval_cases/seeded_defects_v2/DI-V2-02.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -1616,7 +1616,7 @@
       "id": "DI-V2-03",
       "title": "中宸航空器材有限公司数据治理平台服务项目工作说明书",
       "playbook_id": "delivery-intake",
-      "document": "eval_cases\\seeded_defects_v2\\DI-V2-03.txt",
+      "document": "eval_cases/seeded_defects_v2/DI-V2-03.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -1696,7 +1696,7 @@
       "id": "DI-V2-04",
       "title": "长风能源化工有限责任公司档案数字化管理系统服务项目工作说明书",
       "playbook_id": "delivery-intake",
-      "document": "eval_cases\\seeded_defects_v2\\DI-V2-04.txt",
+      "document": "eval_cases/seeded_defects_v2/DI-V2-04.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -1772,7 +1772,7 @@
       "id": "DI-V2-05",
       "title": "川原食品股份有限公司视频监控联网系统服务项目工作说明书",
       "playbook_id": "delivery-intake",
-      "document": "eval_cases\\seeded_defects_v2\\DI-V2-05.txt",
+      "document": "eval_cases/seeded_defects_v2/DI-V2-05.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -1848,7 +1848,7 @@
       "id": "DI-V2-06",
       "title": "临海港口物流股份有限公司设备物联管理平台服务项目工作说明书",
       "playbook_id": "delivery-intake",
-      "document": "eval_cases\\seeded_defects_v2\\DI-V2-06.txt",
+      "document": "eval_cases/seeded_defects_v2/DI-V2-06.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -1932,7 +1932,7 @@
       "id": "DI-V2-07",
       "title": "汇川轨道交通装备有限公司智能客服系统服务项目工作说明书",
       "playbook_id": "delivery-intake",
-      "document": "eval_cases\\seeded_defects_v2\\DI-V2-07.txt",
+      "document": "eval_cases/seeded_defects_v2/DI-V2-07.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [
@@ -2012,7 +2012,7 @@
       "id": "DI-V2-08",
       "title": "晟元电力科学研究院生产执行系统服务项目工作说明书",
       "playbook_id": "delivery-intake",
-      "document": "eval_cases\\seeded_defects_v2\\DI-V2-08.txt",
+      "document": "eval_cases/seeded_defects_v2/DI-V2-08.txt",
       "min_chars": 8000,
       "max_chars": 14000,
       "defects": [

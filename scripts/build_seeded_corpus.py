@@ -451,7 +451,9 @@ def build(manifest: Path, defaults_hint: dict | None = None) -> tuple[list[dict]
         text = render_document(spec)
         documents[spec.id] = (spec, text)
         relpath = out_dir / f"{spec.id}.txt"
-        cases.append(derive_gold(spec, document_relpath=str(relpath), defaults=defaults))
+        # `document` is read back on any platform, so it stays POSIX regardless
+        # of the machine that generated the corpus.
+        cases.append(derive_gold(spec, document_relpath=relpath.as_posix(), defaults=defaults))
     return cases, documents, {"out_dir": out_dir, "cases": defaults.get("cases_path")}
 
 

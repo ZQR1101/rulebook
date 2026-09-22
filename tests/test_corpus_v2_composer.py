@@ -150,3 +150,15 @@ def test_every_rule_is_attacked_at_least_once(derived):
     assert attacked >= set(composer.LIBRARIES["contract-compliance"])
     assert attacked >= set(composer.LIBRARIES["delivery-intake"])
     assert missing, "整套语料里没有任何缺口，缺失判定这一路没被考到"
+
+
+def test_committed_gold_references_documents_portably():
+    """金标在 Linux/CI 上也要读得回来：反斜杠会被当成一个文件名而不是目录分隔。"""
+    cases = json.loads(
+        (PROJECT_ROOT / "eval_cases" / "seeded_defect_cases_v2.json").read_text(encoding="utf-8")
+    )["cases"]
+    for case in cases:
+        document = case["document"]
+        assert "\\" not in document, f"{case['id']} 的 document 含反斜杠：{document}"
+        assert not Path(document).is_absolute(), f"{case['id']} 的 document 必须是相对路径"
+        assert (PROJECT_ROOT / document).exists(), f"{case['id']} 指向的语料文件不存在：{document}"
