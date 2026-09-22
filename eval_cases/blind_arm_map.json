@@ -1,0 +1,7 @@
+{
+  "_comment": "盲测包与原始语料的映射，仅供打分使用，不得放入包内。被测副本存放在仓库外的独立工作区，正文与语料的唯一差异是剥掉了首行的自标注「（合成评测样例）」，因此引用逐字校验必须针对副本，而不是仓库内的 fixture。",
+  "DOC-A.txt": "eval_cases/seeded_defects/CG-SEED-02_缺口合同.txt",
+  "DOC-B.txt": "eval_cases/seeded_defects/CG-SEED-03_完全合规合同.txt",
+  "DOC-C.txt": "eval_cases/seeded_defects/CG-SEED-01_埋入缺陷合同.txt",
+  "DOC-D.txt": "eval_cases/seeded_defects/DI-SEED-01_埋入风险SOW.txt"
+}
