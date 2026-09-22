@@ -104,6 +104,20 @@ def _ratio(numerator: int, denominator: int) -> float | None:
     return round(numerator / denominator, 4) if denominator else None
 
 
+def _cites_gold_clause(citations: list | None, clause_texts: dict[int, str], gold_ordinals) -> bool:
+    """Did the engine quote the clause the violation was actually planted in?
+
+    Goes through the citation gate itself, so "grounded" means the same quote a
+    reviewer would be shown, not a looser match the engine never used.
+    """
+
+    haystacks = [clause_texts.get(ordinal, "") for ordinal in gold_ordinals]
+    from backend.engine.citation_gate import validate_citations
+
+    valid, _ = validate_citations(list(citations or ()), "", [t for t in haystacks if t])
+    return bool(valid)
+
+
 def score_case(
     gold: dict,
     rows: list[dict],
@@ -111,6 +125,7 @@ def score_case(
     *,
     retrieval_gold: dict[str, list[int]] | None = None,
     selections: dict[str, list[int]] | None = None,
+    clause_texts: dict[int, str] | None = None,
 ) -> dict:
     """Compare engine verdicts against gold annotations for one document.
 
@@ -122,6 +137,12 @@ def score_case(
     ``retrieval_gold`` + ``selections`` additionally mark whether a rule's gold
     clause was served to the model at all, which is what separates a judgment
     miss from a retrieval miss.
+
+    ``clause_texts`` (ordinal → text) closes the opposite gap: a planted defect
+    the engine never saw still counts as recalled, because "the document says
+    nothing here" and "the document violates this" both come out as red. A
+    defect hit is only grounded when a stored citation lands inside the clause
+    the violation was planted in.
     """
 
     emissions = emissions or {}
@@ -136,6 +157,8 @@ def score_case(
     }
     unblocked = {"defect_flagged": 0, "defect_exact": 0, "defect_total": 0, "clean_green": 0, "clean_total": 0}
     blocked_rules: list[str] = []
+    ungrounded_defects: list[str] = []
+    grounded_hits = groundable_total = 0
     gap_reason_missing: list[str] = []
     gap_not_red: list[str] = []
     exact_total = 0
@@ -164,6 +187,15 @@ def score_case(
         blocked = measured and bool(gold_ordinals) and not served & gold_ordinals
         if blocked:
             blocked_rules.append(name)
+        groundable = kind == "defect" and bool(gold_ordinals) and bool(clause_texts)
+        grounded = groundable and flagged and _cites_gold_clause(
+            row.get("citations"), clause_texts, gold_ordinals
+        )
+        if groundable:
+            groundable_total += 1
+            grounded_hits += int(grounded)
+            if flagged and not grounded:
+                ungrounded_defects.append(name)
         outcome = {
             "rule": name,
             "dimension": row.get("dimension", ""),
@@ -177,6 +209,8 @@ def score_case(
             "exact": exact,
             "gap_recalled": gap_recalled,
             "retrieval_blocked": blocked,
+            "defect_groundable": groundable,
+            "defect_grounded": grounded,
             "review_state": row.get("review_state"),
             "citations_stored": len(row.get("citations") or []),
             "citations_emitted": emit_count,
@@ -243,6 +277,9 @@ def score_case(
         "retrieval_blocked_total": len(blocked_rules),
         "retrieval_blocked_rules": blocked_rules,
         "defect_total_unblocked": unblocked["defect_total"],
+        "defect_grounded_total": groundable_total,
+        "defect_grounded_recall": _ratio(grounded_hits, groundable_total),
+        "defect_ungrounded_rules": ungrounded_defects,
         "defect_recall_unblocked": _ratio(
             unblocked["defect_flagged"], unblocked["defect_total"]
         ),
@@ -277,7 +314,14 @@ def score_case(
     }
 
 
-def _bucket_totals(results: list[dict], bucket: str | None, predicate, *, skip_blocked: bool = False) -> tuple[int, int]:
+def _bucket_totals(
+    results: list[dict],
+    bucket: str | None,
+    predicate,
+    *,
+    skip_blocked: bool = False,
+    groundable_only: bool = False,
+) -> tuple[int, int]:
     """Pool one predicate over every annotated rule (bucket=None = all kinds)."""
 
     hit = total = 0
@@ -286,6 +330,8 @@ def _bucket_totals(results: list[dict], bucket: str | None, predicate, *, skip_b
             if bucket is not None and detail["kind"] != bucket:
                 continue
             if skip_blocked and detail.get("retrieval_blocked"):
+                continue
+            if groundable_only and not detail.get("defect_groundable"):
                 continue
             total += 1
             hit += int(predicate(detail))
@@ -300,6 +346,9 @@ def aggregate(results: list[dict]) -> dict:
     blocked_hit, _ = _bucket_totals(results, None, lambda d: d.get("retrieval_blocked"))
     defect_hit_ok, defect_total_ok = _bucket_totals(
         results, "defect", lambda d: d["flagged"], skip_blocked=True
+    )
+    grounded_hit, grounded_total = _bucket_totals(
+        results, "defect", lambda d: d["defect_grounded"], groundable_only=True
     )
     clean_green_ok, clean_total_ok = _bucket_totals(
         results, "clean", lambda d: d["actual"] == "green", skip_blocked=True
@@ -322,6 +371,11 @@ def aggregate(results: list[dict]) -> dict:
         "retrieval_block_rate": _ratio(blocked_hit, exact_total),
         "defect_total_unblocked": defect_total_ok,
         "defect_recall_unblocked": _ratio(defect_hit_ok, defect_total_ok),
+        "defect_grounded_total": grounded_total,
+        "defect_grounded_recall": _ratio(grounded_hit, grounded_total),
+        "defect_ungrounded_rules": sorted(
+            {name for r in results for name in r["metrics"].get("defect_ungrounded_rules") or ()}
+        ),
         "clean_total_unblocked": clean_total_ok,
         "false_positive_rate_unblocked": _ratio(
             clean_total_ok - clean_green_ok, clean_total_ok
@@ -586,7 +640,7 @@ def _isolated_env() -> Path:
 
 
 def _read_verdicts(document_id: str) -> tuple[list[dict], dict]:
-    from backend.documents.models import Document, Rule
+    from backend.documents.models import Clause, Document, Rule
     from backend.platform_db import platform_session
 
     session = platform_session()
@@ -607,7 +661,11 @@ def _read_verdicts(document_id: str) -> tuple[list[dict], dict]:
                     "citations": verdict.citations or [],
                 }
             )
-        return rows, {"scorecard": document.scorecard}
+        clause_texts = {
+            clause.ordinal: clause.text
+            for clause in session.query(Clause).filter_by(document_id=document_id).all()
+        }
+        return rows, {"scorecard": document.scorecard, "clause_texts": clause_texts}
     finally:
         session.close()
 
@@ -741,6 +799,7 @@ def run_case(
         recorder.records,
         retrieval_gold=case.get("retrieval_gold"),
         selections=probe.selections if probe else None,
+        clause_texts=extra.get("clause_texts"),
     )
     meta = _engine_run_meta(document_id)
     playbook = get_playbook(case["playbook_id"])
@@ -850,8 +909,17 @@ def _money(value) -> str:
     return "—" if not value else f"${float(value):.4f}"
 
 
-def _counts(results: list[dict], bucket: str, predicate, *, skip_blocked: bool = False) -> str:
-    hit, total = _bucket_totals(results, bucket, predicate, skip_blocked=skip_blocked)
+def _counts(
+    results: list[dict],
+    bucket: str,
+    predicate,
+    *,
+    skip_blocked: bool = False,
+    groundable_only: bool = False,
+) -> str:
+    hit, total = _bucket_totals(
+        results, bucket, predicate, skip_blocked=skip_blocked, groundable_only=groundable_only
+    )
     return f"{hit}/{total}" if total else "—"
 
 
@@ -865,7 +933,7 @@ def _blocking_rows(results: list[dict], overall: dict) -> list[str]:
     if not overall.get("retrieval_blocking_measured"):
         return []
     blocked = overall["retrieval_blocked_total"]
-    return [
+    rows = [
         f"| **检索阻断率** | {_pct(overall['retrieval_block_rate'])} | {blocked}/{overall['rules_scored']} "
         "| 金标条款根本没进模型上下文的规则（引擎侧硬伤，不是判定能力） |",
         f"| 缺陷召回（剔除阻断） | {_pct(overall['defect_recall_unblocked'])} "
@@ -875,6 +943,21 @@ def _blocking_rows(results: list[dict], overall: dict) -> list[str]:
         f"| {_counts(results, 'clean', lambda d: d['actual'] in FLAGGED, skip_blocked=True)} "
         "| 剔除因没看到条款而误判的合规条款 |",
     ]
+    # A defect the engine never saw still counts as recalled: shown nothing, the
+    # model reports the topic missing, and "missing" is graded red as well. Only
+    # quoting the clause the violation sits in proves the violation was read.
+    if overall.get("defect_grounded_total"):
+        ungrounded = overall["defect_ungrounded_rules"]
+        rows.append(
+            f"| **缺陷召回（引用锚定金标条款）** | {_pct(overall['defect_grounded_recall'])} "
+            f"| {_counts(results, 'defect', lambda d: d['defect_grounded'], groundable_only=True)} "
+            "| 判了红/黄，且引用确实出自埋入缺陷那段：这条才算真读到违规文本 |"
+        )
+        rows.append(
+            f"| └ 无锚定命中（蒙对方向） | {len(ungrounded)} 条 | {', '.join(ungrounded) or '—'} "
+            "| 计入缺陷召回与等级一致，但没有读到埋入文本，不能当能力证据 |"
+        )
+    return rows
 
 
 def _temperature_line(results: list[dict]) -> list[str]:
@@ -1066,8 +1149,11 @@ def render_markdown(
         ]
         for detail in sorted(result["metrics"]["details"], key=lambda d: (d["kind"], d["rule"])):
             mark = "✅" if detail["exact"] else ("⚠️" if detail["flagged"] else "❌")
+            label = detail["kind"]
+            if detail["defect_groundable"] and detail["flagged"] and not detail["defect_grounded"]:
+                label = "defect 未读到原文"
             lines.append(
-                f"| {detail['rule']} {mark} | {detail['kind']} | {detail['expected']} | {detail['actual']} "
+                f"| {detail['rule']} {mark} | {label} | {detail['expected']} | {detail['actual']} "
                 f"| {detail['citations_stored']}/{detail['citations_emitted']}/{detail['citations_invalid']} "
                 f"| {(detail.get('rationale') or detail.get('gap_reason') or '')[:60]} |"
             )

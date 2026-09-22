@@ -663,6 +663,42 @@ def test_probe_records_selections_without_changing_them():
     assert probe.selections["付款账期"] == [clause.ordinal for clause in reference]
 
 
+def test_a_defect_hit_that_quotes_nothing_from_the_gold_clause_is_not_grounded():
+    """Retrieval failure must not be able to buy a defect recall.
+
+    Shown no clause at all, the model reports the topic missing, and "missing"
+    is graded red — which is exactly what a planted red defect expects. The
+    headline still counts that hit; the anchoring row must not.
+    """
+
+    gold = {"付款账期": {"kind": "defect", "expected": "red", "note": "账期 120 天"}}
+    clauses = {7: "甲方应于收到发票后 120 日内付款，最迟不超过 180 日。", 9: "乙方应妥善保管履约中接触的数据。"}
+
+    borrowed = score_case(
+        gold,
+        [dict(_row("付款账期", "red"), citations=[{"quote": "乙方应妥善保管履约中接触的数据"}])],
+        retrieval_gold={"付款账期": [7]},
+        clause_texts=clauses,
+    )
+    anchored = score_case(
+        gold,
+        [dict(_row("付款账期", "red"), citations=[{"quote": "最迟不超过 180 日"}])],
+        retrieval_gold={"付款账期": [7]},
+        clause_texts=clauses,
+    )
+    unmeasured = score_case(gold, [dict(_row("付款账期", "red"), citations=[])])
+
+    assert borrowed["defect_recall"] == 1.0  # the headline is still flattered
+    assert borrowed["defect_grounded_recall"] == 0.0
+    assert borrowed["defect_ungrounded_rules"] == ["付款账期"]
+
+    assert anchored["defect_grounded_recall"] == 1.0
+    assert anchored["defect_ungrounded_rules"] == []
+
+    assert unmeasured["defect_grounded_total"] == 0  # no gold clause map = question not asked
+    assert unmeasured["defect_grounded_recall"] is None
+
+
 def test_blocking_rows_appear_only_for_a_corpus_that_can_measure_them(offline_env):
     measured = run_case(
         {**CASE_BY_ID["CG-SEED-03"], "retrieval_gold": {"付款账期": [4]}}, fake="all_red"
@@ -672,3 +708,20 @@ def test_blocking_rows_appear_only_for_a_corpus_that_can_measure_them(offline_en
     assert "检索阻断率" in render_markdown([measured], fake="all_red")
     assert "检索阻断率" not in render_markdown([baseline], fake="all_red")
     assert measured["retrieval_selections"]["付款账期"]
+
+
+def test_defect_recall_without_anchoring_is_reproduced_offline(offline_env):
+    """An always-red model with no evidence scores full recall; anchoring refuses to believe it."""
+
+    result = run_case(
+        {**CASE_BY_ID["CG-SEED-01"], "retrieval_gold": {"付款账期": [4], "责任上限": [5]}},
+        fake="all_red",
+    )
+
+    metrics = result["metrics"]
+    assert metrics["defect_recall"] == 1.0
+    assert metrics["defect_grounded_total"] == 2
+    assert metrics["defect_grounded_recall"] == 0.0
+    assert set(metrics["defect_ungrounded_rules"]) == {"付款账期", "责任上限"}
+    assert "引用锚定金标条款" in render_markdown([result], fake="all_red")
+    assert "defect 未读到原文" in render_markdown([result], fake="all_red")
