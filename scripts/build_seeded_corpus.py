@@ -108,7 +108,7 @@ class DocumentSpec:
     parts: list[list[ClauseSpec]]
     part_titles: list[str] = field(default_factory=list)
     preamble: list[str] = field(default_factory=list)
-    gap_notes: dict[str, str] = field(default_factory=dict)
+    gap_notes: dict[str, "str | dict[str, str]"] = field(default_factory=dict)
 
     @property
     def clauses(self) -> list[ClauseSpec]:
@@ -212,6 +212,20 @@ def shared_vocabulary(clause_text: str, guidance: str) -> tuple[int, list[str]]:
 # ------------------------------------------------------------------------- gold
 
 
+def _gap_label(rule: str, note: str | dict | None) -> dict:
+    """Normalise a gap annotation into a gold label that states its own verdict.
+
+    A bare string is the legacy form — absence meant red. A mapping carries the
+    band the composer declared, so the scorer never has to assume one: several
+    rules put an *incomplete* clause, not an absent one, in their middle band.
+    """
+
+    payload = {"missing": note} if isinstance(note, str) else dict(note or {})
+    payload.setdefault("missing", "全文未约定该事项")
+    payload.setdefault("expected_rating", "red")
+    return {"rule": rule, **payload}
+
+
 def locate_clauses(text: str, spec: DocumentSpec) -> dict[int, int]:
     """Map clause index → parsed ordinal by re-finding each clause in the splitter output.
 
@@ -269,11 +283,17 @@ def derive_gold(spec: DocumentSpec, *, document_relpath: str, defaults: dict) ->
         else:
             raise ValueError(f"{spec.id}：规则 {rule} 的 kind={kind} 不支持（clean|defect）")
 
-    gaps = [
-        {"rule": rule, "missing": spec.gap_notes.get(rule, "全文未约定该事项")}
-        for rule in rules
-        if rule not in answered
-    ]
+    gaps = []
+    for rule in rules:
+        if rule in answered:
+            continue
+        label = _gap_label(rule, spec.gap_notes.get(rule))
+        if label["expected_rating"] == "green":
+            # 红档要先存在一个可判的东西（一个承诺、一处依赖）的规则：条款缺席时
+            # 正确的回答是「无从判红」，那就是合规档，不是缺口。
+            clean.append(rule)
+            continue
+        gaps.append(label)
     return {
         "id": spec.id,
         "title": spec.title,

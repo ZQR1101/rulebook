@@ -45,6 +45,8 @@ from scripts.build_seeded_corpus import (  # noqa: E402
     render_document,
 )
 from scripts.corpus_v2_library import (  # noqa: E402
+    ABSENCE_BAND,
+    ABSENCE_NOT_GRADED,
     DECOYS_APPENDIX,
     DECOYS_GENERAL,
     DECOYS_OPS,
@@ -234,6 +236,21 @@ GAP_NOTES = {
 }
 
 
+def _gap_note(rule: str) -> dict[str, str]:
+    """One gap annotation: what is absent, and what verdict absence actually earns.
+
+    The scorer used to grade every gap red by construction. This is where a rule
+    whose guidance does not put absence in the red band says so, so the builder
+    and the scorer read one declaration instead of each assuming.
+    """
+
+    note = {"missing": GAP_NOTES[rule]}
+    band = "green" if rule in ABSENCE_NOT_GRADED else ABSENCE_BAND.get(rule)
+    if band:
+        note["expected_rating"] = band
+    return note
+
+
 def _number(value: float) -> str:
     if float(value).is_integer():
         return str(int(value))
@@ -311,7 +328,12 @@ def _plan(
     library: dict[str, dict[str, Template]],
     usage: dict[str, dict[str, int]],
 ) -> tuple[tuple[str, ...], dict[str, str]] | None:
-    """Colour the rules, then take gaps only from the rules that can really be empty."""
+    """Colour the rules, then take gaps only from the rules that can really be empty.
+
+    ``ABSENCE_NOT_GRADED`` rules are excluded outright: their red band asks the
+    reviewer to find a promise or a dependency that exists, so an absent clause
+    proves nothing and a gap spent there is a guaranteed mismatch.
+    """
 
     defect_wanted = rng.randint(*DEFECT_RANGE)
     defect_order = sorted(rules, key=lambda rule: (usage[rule]["defect"], rng.random()))
@@ -326,7 +348,7 @@ def _plan(
     eligible = [
         candidate
         for candidate in rules
-        if candidate not in booked
+        if candidate not in booked and candidate not in ABSENCE_NOT_GRADED
         and not _clashes(
             "\n".join(text for rule, text in bodies.items() if rule != candidate), _blockers((candidate,))
         )
@@ -435,7 +457,7 @@ def _assemble(
         parts=parts,
         part_titles=PART_TITLES[playbook_id],
         preamble=_preamble(playbook_id, doc_id, slots),
-        gap_notes={rule: GAP_NOTES[rule] for rule in gaps},
+        gap_notes={rule: _gap_note(rule) for rule in gaps},
     )
 
 

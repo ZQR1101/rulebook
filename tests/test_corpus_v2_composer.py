@@ -9,6 +9,7 @@ honest. All of them are checked without a model call.
 from __future__ import annotations
 
 import json
+import random
 import re
 import sys
 from pathlib import Path
@@ -162,3 +163,45 @@ def test_committed_gold_references_documents_portably():
         assert "\\" not in document, f"{case['id']} 的 document 含反斜杠：{document}"
         assert not Path(document).is_absolute(), f"{case['id']} 的 document 必须是相对路径"
         assert (PROJECT_ROOT / document).exists(), f"{case['id']} 指向的语料文件不存在：{document}"
+
+
+def test_an_ungradeable_absence_never_buys_a_gap_slot():
+    """「不切实际的承诺」的红档要先存在一个可判不可达的承诺；条款缺席不构成结论。
+
+    把这种规则标成缺口，等于先答错再问模型：keyword 与 oracle 两臂 3/3 判 green。
+    """
+
+    for playbook_id, library in composer.LIBRARIES.items():
+        rules = tuple(library)
+        for seed in range(60):
+            usage = {rule: {"gap": 0, "defect": 0, "red": 0, "amber": 0} for rule in rules}
+            plan = composer._plan(random.Random(seed), rules, library, usage)
+            if plan is None:
+                continue
+            gaps, _ = plan
+            assert not set(gaps) & composer.ABSENCE_NOT_GRADED, (
+                f"{playbook_id} seed={seed} 把不可判的缺席当缺口"
+            )
+
+
+def test_every_gap_declares_the_band_its_absence_actually_earns(derived):
+    """金标必须自带预期档位，打分器不再靠"缺口就是红"这个假设。"""
+    cases, _ = derived
+    seen = set()
+    for case in cases:
+        for gap in case["gaps"]:
+            seen.add(gap["rule"])
+            assert gap["expected_rating"] == composer.ABSENCE_BAND.get(gap["rule"], "red"), (
+                f"{case['id']} 的缺口「{gap['rule']}」档位与声明不符：{gap}"
+            )
+    assert seen & set(composer.ABSENCE_BAND), "整套语料里没有任何黄档缺口，这条口径没被考到"
+
+
+def test_a_compliant_clause_never_cancels_its_own_limit():
+    """绿色模板曾一边设上限、一边把超限部分推回责任方，16 份合同里 8 份因此判红。"""
+
+    unlimited = re.compile(r"超出[^。]{0,20}限额|不受[^。]{0,12}限额约束|不以[^。]{0,12}为限|无限责任")
+    for playbook_id, library in composer.LIBRARIES.items():
+        for rule, variants in library.items():
+            green = "\n".join(variants["green"].sentences)
+            assert not unlimited.search(green), f"{playbook_id}/{rule} 的绿色条款自我取消了限额：{green}"

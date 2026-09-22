@@ -86,7 +86,7 @@ CONTRACT: dict[str, dict[str, Template]] = {
     "责任上限": {
         "green": Template("赔偿限额与排除", (
             "任一方在本合同项下的累计赔偿责任不超过合同总价，即人民币 {amount} 元；间接损失、可得利益损失不在赔偿范围内。",
-            "超出上述限额的部分由责任方自行承担，不影响本合同其他条款的效力。",
+            "本条限额涵盖违约金、损害赔偿金与实现权利所生费用等全部赔偿形式，任一方不得以合同其他条款排除或突破本条限额。",
         )),
         "amber": Template("赔偿限额与排除", (
             "{party_b}在本合同项下的累计赔偿责任不超过本年度服务费，即人民币 {annual} 元的 {cap_pct}%。",
@@ -643,6 +643,28 @@ GAP_SIGNATURES: dict[str, tuple[str, ...]] = {
     "数据处理合规": ("个人信息", "脱敏", "读写权限", "证件号码", "数据处理"),
     "保密与知识产权": ("保密", "披露", "权属", "非公开信息"),
 }
+
+# An absent clause proves what its own guidance says it proves — not automatically
+# red. ``GAP_SIGNATURES`` can only scrub *words*; it cannot scrub the substance a
+# red band asks the reviewer to find. 2026-09-22 measured both paid arms plus the
+# blind arm agreeing off-red on exactly these rules, for two distinct reasons:
+ABSENCE_BAND: dict[str, str] = {
+    # 红档是「无数据保护条款」，但安全事件通报、账号最小必要、台账留存这些相邻
+    # 条款在任何真实合同里必然在场，读来的就是「义务不完整」= 黄。删干净它们会
+    # 拆掉别的规则。×3 份：keyword/oracle 各 2 黄 1 红。
+    "数据保护义务": "amber",
+    # 红档是「单点依赖且无缓解」，需要先认定存在依赖。交付件恒含具名接口人与
+    # 「人员变动应提前书面告知」，后者按 guidance 正是缓解意向 ⇒ 恒为黄。
+    # ×5 份：keyword/oracle 各 3 黄 2 红。
+    "单点依赖": "amber",
+    # 红档以「涉敏感数据」为前提，语料从不把数据定性为敏感 ⇒ 落到「涉数据但授权
+    # 不全」= 黄。×1 份：keyword 黄、oracle 红。
+    "数据处理合规": "amber",
+}
+# 红档要求先存在一个可被判断的东西（一个承诺、一处依赖），所以条款缺席根本不构成
+# 结论——审阅者只能说「无从判断」，也就是 green。这些规则不得占用缺口名额。
+# 不切实际的承诺 ×3 份：keyword 3/3 判 green，oracle 2 green 1 amber。
+ABSENCE_NOT_GRADED: frozenset[str] = frozenset({"不切实际的承诺"})
 
 LIBRARIES = {
     "contract-compliance": CONTRACT,

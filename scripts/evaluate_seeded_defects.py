@@ -80,7 +80,7 @@ def gold_index(case: dict) -> dict[str, dict]:
     for defect in case.get("defects", []):
         add(defect["rule"], "defect", defect["expected_rating"], defect.get("planted", ""))
     for gap in case.get("gaps", []):
-        add(gap["rule"], "gap", "red", gap.get("missing", ""))
+        add(gap["rule"], "gap", gap.get("expected_rating", "red"), gap.get("missing", ""))
     for rule in case.get("clean", []):
         add(rule, "clean", "green", "")
     return index
@@ -152,7 +152,7 @@ def score_case(
     details: list[dict] = []
     counters = {
         "defect": [0, 0, 0],  # flagged, exact, total
-        "gap": [0, 0, 0],  # red+gap_reason, flagged, total
+        "gap": [0, 0, 0],  # reached its declared band, flagged, total
         "clean": [0, 0, 0],  # green, total, (unused)
     }
     unblocked = {"defect_flagged": 0, "defect_exact": 0, "defect_total": 0, "clean_green": 0, "clean_total": 0}
@@ -179,7 +179,12 @@ def score_case(
         emitted += emit_count
         valid_emitted += valid_count
 
-        gap_recalled = rating == "red" and bool((row.get("gap_reason") or "").strip())
+        # A gap is recalled at the band its own label declares. Only a red-expecting
+        # gap must also say what is missing: the output contract forbids citations
+        # on an absence claim, so `gap_reason` is the sole evidence it noticed.
+        gap_recalled = rating == expected and (
+            bool((row.get("gap_reason") or "").strip()) if expected == "red" else True
+        )
         flagged = rating in FLAGGED
         exact = rating == expected
         gold_ordinals = set(retrieval_gold.get(name) or ())
@@ -230,9 +235,9 @@ def score_case(
             counters["gap"][0] += int(gap_recalled)
             counters["gap"][1] += int(flagged)
             counters["gap"][2] += 1
-            if rating == "red" and not gap_recalled:
+            if expected == "red" and rating == "red" and not gap_recalled:
                 gap_reason_missing.append(name)
-            elif rating != "red":
+            elif expected == "red" and rating != "red":
                 gap_not_red.append(name)
         else:
             counters["clean"][0] += int(rating == "green")

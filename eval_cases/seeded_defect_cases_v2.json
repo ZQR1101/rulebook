@@ -32,11 +32,13 @@
       "gaps": [
         {
           "rule": "责任上限",
-          "missing": "全文无责任限额安排"
+          "missing": "全文无责任限额安排",
+          "expected_rating": "red"
         },
         {
           "rule": "审计权",
-          "missing": "全文未赋予我方核查或审计的权利"
+          "missing": "全文未赋予我方核查或审计的权利",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -124,15 +126,18 @@
       "gaps": [
         {
           "rule": "数据保护义务",
-          "missing": "全文未约定数据与机密信息的保护义务"
+          "missing": "全文未约定数据与机密信息的保护义务",
+          "expected_rating": "amber"
         },
         {
           "rule": "适用法律",
-          "missing": "全文未约定适用法律与争议解决方式"
+          "missing": "全文未约定适用法律与争议解决方式",
+          "expected_rating": "red"
         },
         {
           "rule": "分包披露",
-          "missing": "全文未涉及分包披露与同意安排"
+          "missing": "全文未涉及分包披露与同意安排",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -216,15 +221,18 @@
       "gaps": [
         {
           "rule": "知识产权归属",
-          "missing": "全文未涉及成果权利归属与许可范围"
+          "missing": "全文未涉及成果权利归属与许可范围",
+          "expected_rating": "red"
         },
         {
           "rule": "数据泄露通知",
-          "missing": "全文未约定安全事件的通报义务与时限"
+          "missing": "全文未约定安全事件的通报义务与时限",
+          "expected_rating": "red"
         },
         {
           "rule": "可用性承诺",
-          "missing": "全文未给出服务可用性指标"
+          "missing": "全文未给出服务可用性指标",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -303,11 +311,13 @@
       "gaps": [
         {
           "rule": "定价清晰度",
-          "missing": "全文无价格与费用条款"
+          "missing": "全文无价格与费用条款",
+          "expected_rating": "red"
         },
         {
           "rule": "违约补偿条款",
-          "missing": "全文未约定未达服务目标时的补偿机制"
+          "missing": "全文未约定未达服务目标时的补偿机制",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -401,15 +411,18 @@
       "gaps": [
         {
           "rule": "定价清晰度",
-          "missing": "全文无价格与费用条款"
+          "missing": "全文无价格与费用条款",
+          "expected_rating": "red"
         },
         {
           "rule": "数据保护义务",
-          "missing": "全文未约定数据与机密信息的保护义务"
+          "missing": "全文未约定数据与机密信息的保护义务",
+          "expected_rating": "amber"
         },
         {
           "rule": "响应时限",
-          "missing": "全文未约定故障响应与处理时限"
+          "missing": "全文未约定故障响应与处理时限",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -487,11 +500,13 @@
       "gaps": [
         {
           "rule": "付款账期",
-          "missing": "全文未约定付款账期与支付前提"
+          "missing": "全文未约定付款账期与支付前提",
+          "expected_rating": "red"
         },
         {
           "rule": "违约补偿条款",
-          "missing": "全文未约定未达服务目标时的补偿机制"
+          "missing": "全文未约定未达服务目标时的补偿机制",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -575,11 +590,13 @@
       "gaps": [
         {
           "rule": "付款账期",
-          "missing": "全文未约定付款账期与支付前提"
+          "missing": "全文未约定付款账期与支付前提",
+          "expected_rating": "red"
         },
         {
           "rule": "知识产权归属",
-          "missing": "全文未涉及成果权利归属与许可范围"
+          "missing": "全文未涉及成果权利归属与许可范围",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -663,15 +680,18 @@
       "gaps": [
         {
           "rule": "交付与验收条款",
-          "missing": "全文未约定交付内容、时间与验收流程"
+          "missing": "全文未约定交付内容、时间与验收流程",
+          "expected_rating": "red"
         },
         {
           "rule": "数据存储地",
-          "missing": "全文未约定数据存储与处理的地域要求"
+          "missing": "全文未约定数据存储与处理的地域要求",
+          "expected_rating": "red"
         },
         {
           "rule": "审计权",
-          "missing": "全文未赋予我方核查或审计的权利"
+          "missing": "全文未赋予我方核查或审计的权利",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -751,11 +771,13 @@
       "gaps": [
         {
           "rule": "交付与验收条款",
-          "missing": "全文未约定交付内容、时间与验收流程"
+          "missing": "全文未约定交付内容、时间与验收流程",
+          "expected_rating": "red"
         },
         {
           "rule": "责任上限",
-          "missing": "全文无责任限额安排"
+          "missing": "全文无责任限额安排",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -839,15 +861,18 @@
       "gaps": [
         {
           "rule": "数据存储地",
-          "missing": "全文未约定数据存储与处理的地域要求"
+          "missing": "全文未约定数据存储与处理的地域要求",
+          "expected_rating": "red"
         },
         {
           "rule": "响应时限",
-          "missing": "全文未约定故障响应与处理时限"
+          "missing": "全文未约定故障响应与处理时限",
+          "expected_rating": "red"
         },
         {
           "rule": "分包披露",
-          "missing": "全文未涉及分包披露与同意安排"
+          "missing": "全文未涉及分包披露与同意安排",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -937,11 +962,13 @@
       "gaps": [
         {
           "rule": "知识产权归属",
-          "missing": "全文未涉及成果权利归属与许可范围"
+          "missing": "全文未涉及成果权利归属与许可范围",
+          "expected_rating": "red"
         },
         {
           "rule": "适用法律",
-          "missing": "全文未约定适用法律与争议解决方式"
+          "missing": "全文未约定适用法律与争议解决方式",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -1028,11 +1055,13 @@
       "gaps": [
         {
           "rule": "付款账期",
-          "missing": "全文未约定付款账期与支付前提"
+          "missing": "全文未约定付款账期与支付前提",
+          "expected_rating": "red"
         },
         {
           "rule": "分包披露",
-          "missing": "全文未涉及分包披露与同意安排"
+          "missing": "全文未涉及分包披露与同意安排",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -1120,15 +1149,18 @@
       "gaps": [
         {
           "rule": "数据存储地",
-          "missing": "全文未约定数据存储与处理的地域要求"
+          "missing": "全文未约定数据存储与处理的地域要求",
+          "expected_rating": "red"
         },
         {
           "rule": "违约补偿条款",
-          "missing": "全文未约定未达服务目标时的补偿机制"
+          "missing": "全文未约定未达服务目标时的补偿机制",
+          "expected_rating": "red"
         },
         {
           "rule": "审计权",
-          "missing": "全文未赋予我方核查或审计的权利"
+          "missing": "全文未赋予我方核查或审计的权利",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -1212,11 +1244,13 @@
       "gaps": [
         {
           "rule": "定价清晰度",
-          "missing": "全文无价格与费用条款"
+          "missing": "全文无价格与费用条款",
+          "expected_rating": "red"
         },
         {
           "rule": "数据保护义务",
-          "missing": "全文未约定数据与机密信息的保护义务"
+          "missing": "全文未约定数据与机密信息的保护义务",
+          "expected_rating": "amber"
         }
       ],
       "clean": [
@@ -1309,15 +1343,18 @@
       "gaps": [
         {
           "rule": "责任上限",
-          "missing": "全文无责任限额安排"
+          "missing": "全文无责任限额安排",
+          "expected_rating": "red"
         },
         {
           "rule": "可用性承诺",
-          "missing": "全文未给出服务可用性指标"
+          "missing": "全文未给出服务可用性指标",
+          "expected_rating": "red"
         },
         {
           "rule": "适用法律",
-          "missing": "全文未约定适用法律与争议解决方式"
+          "missing": "全文未约定适用法律与争议解决方式",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -1395,11 +1432,13 @@
       "gaps": [
         {
           "rule": "交付与验收条款",
-          "missing": "全文未约定交付内容、时间与验收流程"
+          "missing": "全文未约定交付内容、时间与验收流程",
+          "expected_rating": "red"
         },
         {
           "rule": "响应时限",
-          "missing": "全文未约定故障响应与处理时限"
+          "missing": "全文未约定故障响应与处理时限",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -1482,16 +1521,14 @@
       ],
       "gaps": [
         {
-          "rule": "不切实际的承诺",
-          "missing": "全文未给出工期、投入与质量目标，无从判断承诺是否可达"
-        },
-        {
           "rule": "单点依赖",
-          "missing": "全文未涉及关键人员、组件的冗余安排"
+          "missing": "全文未涉及关键人员、组件的冗余安排",
+          "expected_rating": "amber"
         },
         {
           "rule": "责任与赔偿",
-          "missing": "全文未约定违约责任与赔偿安排"
+          "missing": "全文未约定违约责任与赔偿安排",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -1500,7 +1537,8 @@
         "范围蔓延风险",
         "依赖与前置条件",
         "计费与结算",
-        "数据处理合规"
+        "数据处理合规",
+        "不切实际的承诺"
       ],
       "retrieval_gold": {
         "需求范围明确": [
@@ -1564,11 +1602,13 @@
       "gaps": [
         {
           "rule": "需求范围明确",
-          "missing": "全文未定义交付范围与边界"
+          "missing": "全文未定义交付范围与边界",
+          "expected_rating": "red"
         },
         {
           "rule": "保密与知识产权",
-          "missing": "全文未约定资料保护与成果权属"
+          "missing": "全文未约定资料保护与成果权属",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -1644,15 +1684,18 @@
       "gaps": [
         {
           "rule": "单点依赖",
-          "missing": "全文未涉及关键人员、组件的冗余安排"
+          "missing": "全文未涉及关键人员、组件的冗余安排",
+          "expected_rating": "amber"
         },
         {
           "rule": "数据处理合规",
-          "missing": "全文未涉及数据提供与使用授权"
+          "missing": "全文未涉及数据提供与使用授权",
+          "expected_rating": "amber"
         },
         {
           "rule": "保密与知识产权",
-          "missing": "全文未约定资料保护与成果权属"
+          "missing": "全文未约定资料保护与成果权属",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -1719,11 +1762,13 @@
       "gaps": [
         {
           "rule": "单点依赖",
-          "missing": "全文未涉及关键人员、组件的冗余安排"
+          "missing": "全文未涉及关键人员、组件的冗余安排",
+          "expected_rating": "amber"
         },
         {
           "rule": "保密与知识产权",
-          "missing": "全文未约定资料保护与成果权属"
+          "missing": "全文未约定资料保护与成果权属",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -1795,11 +1840,13 @@
       "gaps": [
         {
           "rule": "范围蔓延风险",
-          "missing": "全文未出现工作内容调整或新增要求的处理安排"
+          "missing": "全文未出现工作内容调整或新增要求的处理安排",
+          "expected_rating": "red"
         },
         {
           "rule": "责任与赔偿",
-          "missing": "全文未约定违约责任与赔偿安排"
+          "missing": "全文未约定违约责任与赔偿安排",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -1880,12 +1927,9 @@
       ],
       "gaps": [
         {
-          "rule": "不切实际的承诺",
-          "missing": "全文未给出工期、投入与质量目标，无从判断承诺是否可达"
-        },
-        {
           "rule": "单点依赖",
-          "missing": "全文未涉及关键人员、组件的冗余安排"
+          "missing": "全文未涉及关键人员、组件的冗余安排",
+          "expected_rating": "amber"
         }
       ],
       "clean": [
@@ -1893,7 +1937,8 @@
         "关键角色与联系人",
         "时间与里程碑",
         "范围蔓延风险",
-        "计费与结算"
+        "计费与结算",
+        "不切实际的承诺"
       ],
       "retrieval_gold": {
         "需求范围明确": [
@@ -1959,16 +2004,14 @@
       ],
       "gaps": [
         {
-          "rule": "不切实际的承诺",
-          "missing": "全文未给出工期、投入与质量目标，无从判断承诺是否可达"
-        },
-        {
           "rule": "责任与赔偿",
-          "missing": "全文未约定违约责任与赔偿安排"
+          "missing": "全文未约定违约责任与赔偿安排",
+          "expected_rating": "red"
         },
         {
           "rule": "保密与知识产权",
-          "missing": "全文未约定资料保护与成果权属"
+          "missing": "全文未约定资料保护与成果权属",
+          "expected_rating": "red"
         }
       ],
       "clean": [
@@ -1976,7 +2019,8 @@
         "验收标准",
         "依赖与前置条件",
         "计费与结算",
-        "数据处理合规"
+        "数据处理合规",
+        "不切实际的承诺"
       ],
       "retrieval_gold": {
         "需求范围明确": [
@@ -2040,15 +2084,18 @@
       "gaps": [
         {
           "rule": "单点依赖",
-          "missing": "全文未涉及关键人员、组件的冗余安排"
+          "missing": "全文未涉及关键人员、组件的冗余安排",
+          "expected_rating": "amber"
         },
         {
           "rule": "责任与赔偿",
-          "missing": "全文未约定违约责任与赔偿安排"
+          "missing": "全文未约定违约责任与赔偿安排",
+          "expected_rating": "red"
         },
         {
           "rule": "保密与知识产权",
-          "missing": "全文未约定资料保护与成果权属"
+          "missing": "全文未约定资料保护与成果权属",
+          "expected_rating": "red"
         }
       ],
       "clean": [

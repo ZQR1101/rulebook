@@ -529,6 +529,32 @@ def test_aggregate_pools_the_gap_reason_loss_across_documents():
     assert overall["gap_red_without_reason"] == 1  # and one of the misses was field placement
 
 
+def test_a_gap_label_carries_its_own_band_and_legacy_labels_stay_red():
+    """「缺口＝红」原来是打分器写死的；标签现在必须自己声明落在哪一档。"""
+
+    legacy = _case("contract-compliance", gaps=[{"rule": "审计权", "missing": "全文未约定"}])
+    declared = _case(
+        "delivery-intake",
+        gaps=[{"rule": "单点依赖", "missing": "全文未约定", "expected_rating": "amber"}],
+    )
+
+    assert gold_index(legacy)["审计权"]["expected"] == "red"
+    assert gold_index(declared)["单点依赖"]["expected"] == "amber"
+
+
+def test_a_middle_band_gap_is_recalled_at_amber_and_not_by_over_calling_red():
+    gold = {"单点依赖": {"kind": "gap", "expected": "amber", "note": "全文未约定"}}
+
+    amber = score_case(gold, [_row("单点依赖", "amber")])
+    over_called = score_case(gold, [_row("单点依赖", "red")])
+    missed = score_case(gold, [_row("单点依赖", "green")])
+
+    assert amber["gap_recall"] == 1.0
+    assert (over_called["gap_recall"], missed["gap_recall"]) == (0.0, 0.0)
+    # Reaching the declared band is not a "silence about the absence" failure.
+    assert amber["gap_red_without_reason"] == 0 and amber["gap_not_red_rules"] == []
+
+
 # ---------------------------------------------------------------- oracle retrieval
 
 
