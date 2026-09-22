@@ -13,9 +13,12 @@ import pytest
 from test_engine_pipeline import platform_env  # noqa: F401  (fixture shared via import)
 
 from scripts.evaluate_seeded_defects import (
+    OracleRetrieval,
+    RetrievalProbe,
     aggregate,
     gold_index,
     load_cases,
+    render_markdown,
     run_case,
     score_case,
     validate_gold,
@@ -401,8 +404,10 @@ def test_retry_after_a_dropped_call_reaches_the_engine(offline_env, monkeypatch)
     real_run_case = harness.run_case
     attempts: list[str] = []
 
-    def dropped_after_ingesting(case, *, fake=None, model=None, temperature=None):
-        result = real_run_case(case, fake=fake, model=model, temperature=temperature)
+    def dropped_after_ingesting(case, *, fake=None, model=None, temperature=None, retrieval=None):
+        result = real_run_case(
+            case, fake=fake, model=model, temperature=temperature, retrieval=retrieval
+        )
         attempts.append(case["id"])
         if len(attempts) == 1:
             raise ConnectionError("APIConnectionError: Connection error")
@@ -483,3 +488,187 @@ def test_noise_section_needs_two_passes_to_exist(offline_env):
     section = "\n".join(_noise_section([[first], [second]]))
     assert "## 轮间噪声（2 轮独立运行）" in section
     assert "| 误报率 |" in section and "| 均值 | 极差 |" in section
+
+
+# ------------------------------------------------------------------ gap rubric split
+
+
+def test_gap_found_but_explained_in_the_wrong_field_is_counted_apart():
+    """Both arms lost this point on 单点依赖: red verdict, empty gap_reason, real gap."""
+
+    gold = {"单点依赖": {"kind": "gap", "expected": "red", "note": "全文未约定"}}
+    metrics = score_case(gold, [_row("单点依赖", "red")])
+
+    assert metrics["gap_recall"] == 0.0  # the shared rubric still requires gap_reason
+    assert metrics["gap_red_without_reason"] == 1
+    assert metrics["gap_red_without_reason_rules"] == ["单点依赖"]
+    assert metrics["gap_not_red_rules"] == []
+
+
+def test_a_gap_never_spotted_is_a_different_failure():
+    gold = {"单点依赖": {"kind": "gap", "expected": "red", "note": "全文未约定"}}
+    metrics = score_case(gold, [_row("单点依赖", "green")])
+
+    assert metrics["gap_red_without_reason"] == 0
+    assert metrics["gap_not_red_rules"] == ["单点依赖"]
+
+
+def test_aggregate_pools_the_gap_reason_loss_across_documents():
+    gold = {"单点依赖": {"kind": "gap", "expected": "red", "note": ""}}
+
+    def result(**kwargs):
+        return {
+            "metrics": score_case(gold, [_row("单点依赖", **kwargs)]),
+            "latency_ms": 1,
+        }
+
+    overall = aggregate([result(rating="red"), result(rating="red", gap_reason="未约定"), result(rating="amber")])
+
+    assert overall["gap_total"] == 3
+    assert overall["gap_recall"] == 0.3333  # one verdict carried a gap_reason
+    assert overall["gap_red_without_reason"] == 1  # and one of the misses was field placement
+
+
+# ---------------------------------------------------------------- oracle retrieval
+
+
+def _clause(ordinal: int, text: str):
+    from backend.engine.parsing import ParsedClause
+
+    return ParsedClause(ordinal=ordinal, heading=text.split("\n", 1)[0], text=text)
+
+
+def test_oracle_hands_over_exactly_the_gold_clause():
+    clauses = [_clause(index, f"第{index}条 常规条款内容") for index in range(1, 6)]
+    oracle = OracleRetrieval({"付款账期": [4]})
+
+    picked = oracle.select(clauses, "付款账期 检查付款账期条款。账期不超过 60 天为绿。")
+
+    assert [clause.ordinal for clause in picked] == [4]
+    assert oracle.forced == ["付款账期"]
+    assert oracle.fell_back == []
+
+
+def test_oracle_falls_back_for_rules_that_have_no_gold_clause():
+    """整段缺失本来就没有金标条款，走真实检索才是诚实的对照。"""
+
+    clauses = [_clause(index, f"第{index}条 常规条款内容") for index in range(1, 6)]
+    oracle = OracleRetrieval({"付款账期": [4]})
+
+    picked = oracle.select(clauses, "数据存储地 检查数据存储与处理地域要求。")
+
+    assert oracle.fell_back == ["数据存储地"]
+    # The fixture is far under the 6,000-char budget, so the real selector
+    # legitimately returns everything; the point is it did not return *only* 4.
+    assert [clause.ordinal for clause in picked] != [4]
+
+
+def test_oracle_respects_the_same_character_budget_as_the_live_selector():
+    clauses = [_clause(1, "甲" * 3000), _clause(2, "乙" * 3000), _clause(3, "丙" * 100)]
+    oracle = OracleRetrieval({"付款账期": [1, 2, 3]})
+
+    picked = oracle.select(clauses, "付款账期 账期")
+
+    assert sum(len(clause.text) for clause in picked) <= oracle.char_budget
+    assert [clause.ordinal for clause in picked] == [1, 2]
+
+
+def test_oracle_patch_is_reverted_after_the_block():
+    from backend.engine import scoring
+
+    original = scoring.select_clauses
+    with OracleRetrieval({"付款账期": [1]}):
+        assert scoring.select_clauses is not original
+    assert scoring.select_clauses is original
+
+
+def test_oracle_arm_runs_end_to_end_and_reports_which_rules_it_forced(offline_env):
+    case = {**CASE_BY_ID["CG-SEED-01"], "retrieval_gold": {"付款账期": [4], "责任上限": [5]}}
+
+    result = run_case(case, fake="all_red", retrieval="oracle")
+
+    assert result["retrieval_arm"] == "oracle"
+    assert result["oracle_forced_rules"] == ["付款账期", "责任上限"]
+    assert len(result["oracle_fallback_rules"]) == 13  # 15 rules minus the two forced
+    assert result["metrics"]["coverage_ok"] is True
+
+
+def test_oracle_arm_refuses_a_case_without_gold_ordinals(offline_env):
+    with pytest.raises(ValueError, match="retrieval_gold"):
+        run_case(CASE_BY_ID["CG-SEED-02"], fake="all_red", retrieval="oracle")
+
+
+def test_report_says_the_oracle_numbers_are_not_live_capability(offline_env):
+    case = {**CASE_BY_ID["CG-SEED-03"], "retrieval_gold": {"付款账期": [4]}}
+    result = run_case(case, fake="all_red", retrieval="oracle")
+
+    oracle_report = render_markdown([result], fake="all_red", retrieval_arm="oracle")
+    plain_report = render_markdown([result], fake="all_red")
+
+    assert "oracle 臂" in oracle_report
+    assert "oracle 臂" not in plain_report
+
+
+def test_limitations_admit_retrieval_only_when_the_corpus_outgrows_the_budget(offline_env):
+    short = run_case(CASE_BY_ID["CG-SEED-02"], fake="all_red")
+
+    assert "不混入检索召回因素" in render_markdown([short], fake="all_red")
+
+    long_like = dict(short, clause_chars=9000)
+    report = render_markdown([long_like], fake="all_red")
+    assert "混入检索召回因素" in report
+    assert "不混入检索召回因素" not in report
+
+
+# ------------------------------------------------------------- retrieval blocking
+
+
+def test_a_missed_defect_is_attributed_to_retrieval_when_the_clause_was_not_served():
+    gold = {"付款账期": {"kind": "defect", "expected": "red", "note": "账期 120 天"}}
+    rows = [_row("付款账期", "green")]
+
+    blocked = score_case(gold, rows, retrieval_gold={"付款账期": [7]}, selections={"付款账期": [1, 2, 3]})
+    served = score_case(gold, rows, retrieval_gold={"付款账期": [7]}, selections={"付款账期": [7, 2]})
+    unmeasured = score_case(gold, rows)
+
+    assert blocked["defect_recall"] == 0.0  # the headline never gets flattered
+    assert blocked["retrieval_blocked_total"] == 1
+    assert blocked["retrieval_blocked_rules"] == ["付款账期"]
+    assert blocked["defect_total_unblocked"] == 0
+    assert blocked["defect_recall_unblocked"] is None  # nothing judgeable left
+
+    assert served["retrieval_blocked_total"] == 0
+    assert served["defect_total_unblocked"] == 1
+    assert served["defect_recall_unblocked"] == 0.0
+
+    assert unmeasured["retrieval_blocking_measured"] is False
+    assert unmeasured["retrieval_blocked_total"] == 0
+    assert unmeasured["defect_total_unblocked"] == 1  # not measured = not excluded
+
+
+def test_probe_records_selections_without_changing_them():
+    from backend.engine.retrieval import select_clauses
+
+    clauses = [
+        _clause(1, "第1条 双方一般约定"),
+        _clause(2, "第2条 账期 120 天，逾期部分按日 1% 计"),
+    ]
+    query = "付款账期 检查付款账期条款。账期不超过 60 天为绿。"
+    probe = RetrievalProbe()
+
+    picked = probe.select(clauses, query, mode="keyword")
+    reference = select_clauses(clauses, query, mode="keyword")
+
+    assert [clause.ordinal for clause in picked] == [clause.ordinal for clause in reference]
+    assert probe.selections["付款账期"] == [clause.ordinal for clause in reference]
+
+
+def test_blocking_rows_appear_only_for_a_corpus_that_can_measure_them(offline_env):
+    measured = run_case(
+        {**CASE_BY_ID["CG-SEED-03"], "retrieval_gold": {"付款账期": [4]}}, fake="all_red"
+    )
+    baseline = run_case(CASE_BY_ID["CG-SEED-02"], fake="all_red")
+
+    assert "检索阻断率" in render_markdown([measured], fake="all_red")
+    assert "检索阻断率" not in render_markdown([baseline], fake="all_red")
+    assert measured["retrieval_selections"]["付款账期"]

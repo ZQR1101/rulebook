@@ -21,6 +21,12 @@ every quote against the source document. ``--fake`` runs a scripted model so CI
 can exercise the harness (and the metric math) offline — those numbers validate
 the measuring stick, not the engine.
 
+``--retrieval oracle`` feeds the scorer the gold clauses instead of letting
+retrieval find them, which splits a low score into "judged wrong" and "never
+shown the clause". ``--cases/--report/--metrics`` point the harness at another
+corpus and another output pair, so a second gold set can never overwrite the
+committed v1 baseline.
+
 Output: ``reports/SEEDED_DEFECT_EVAL_REPORT.md`` + a JSON blob beside it.
 """
 
@@ -98,16 +104,29 @@ def _ratio(numerator: int, denominator: int) -> float | None:
     return round(numerator / denominator, 4) if denominator else None
 
 
-def score_case(gold: dict, rows: list[dict], emissions: dict[str, dict] | None = None) -> dict:
+def score_case(
+    gold: dict,
+    rows: list[dict],
+    emissions: dict[str, dict] | None = None,
+    *,
+    retrieval_gold: dict[str, list[int]] | None = None,
+    selections: dict[str, list[int]] | None = None,
+) -> dict:
     """Compare engine verdicts against gold annotations for one document.
 
     ``rows``: [{"rule_name", "dimension", "rating", "gap_reason",
     "review_state", "citations"}]. ``emissions``: rule name → raw model output
     ({"emitted_rating", "emitted_citations", "valid_citations",
     "invalid_citations"}) captured by :class:`RecordingLLM`.
+
+    ``retrieval_gold`` + ``selections`` additionally mark whether a rule's gold
+    clause was served to the model at all, which is what separates a judgment
+    miss from a retrieval miss.
     """
 
     emissions = emissions or {}
+    retrieval_gold = retrieval_gold or {}
+    measured = bool(retrieval_gold) and selections is not None
     expected_rules = len(gold)
     details: list[dict] = []
     counters = {
@@ -115,6 +134,10 @@ def score_case(gold: dict, rows: list[dict], emissions: dict[str, dict] | None =
         "gap": [0, 0, 0],  # red+gap_reason, flagged, total
         "clean": [0, 0, 0],  # green, total, (unused)
     }
+    unblocked = {"defect_flagged": 0, "defect_exact": 0, "defect_total": 0, "clean_green": 0, "clean_total": 0}
+    blocked_rules: list[str] = []
+    gap_reason_missing: list[str] = []
+    gap_not_red: list[str] = []
     exact_total = 0
     emitted = valid_emitted = 0
     unsupported_green = caught_green = 0
@@ -136,6 +159,11 @@ def score_case(gold: dict, rows: list[dict], emissions: dict[str, dict] | None =
         gap_recalled = rating == "red" and bool((row.get("gap_reason") or "").strip())
         flagged = rating in FLAGGED
         exact = rating == expected
+        gold_ordinals = set(retrieval_gold.get(name) or ())
+        served = set((selections or {}).get(name) or [])
+        blocked = measured and bool(gold_ordinals) and not served & gold_ordinals
+        if blocked:
+            blocked_rules.append(name)
         outcome = {
             "rule": name,
             "dimension": row.get("dimension", ""),
@@ -148,6 +176,7 @@ def score_case(gold: dict, rows: list[dict], emissions: dict[str, dict] | None =
             "flagged": flagged,
             "exact": exact,
             "gap_recalled": gap_recalled,
+            "retrieval_blocked": blocked,
             "review_state": row.get("review_state"),
             "citations_stored": len(row.get("citations") or []),
             "citations_emitted": emit_count,
@@ -159,13 +188,24 @@ def score_case(gold: dict, rows: list[dict], emissions: dict[str, dict] | None =
             counters["defect"][0] += int(flagged)
             counters["defect"][1] += int(exact)
             counters["defect"][2] += 1
+            if not blocked:
+                unblocked["defect_flagged"] += int(flagged)
+                unblocked["defect_exact"] += int(exact)
+                unblocked["defect_total"] += 1
         elif kind == "gap":
             counters["gap"][0] += int(gap_recalled)
             counters["gap"][1] += int(flagged)
             counters["gap"][2] += 1
+            if rating == "red" and not gap_recalled:
+                gap_reason_missing.append(name)
+            elif rating != "red":
+                gap_not_red.append(name)
         else:
             counters["clean"][0] += int(rating == "green")
             counters["clean"][1] += 1
+            if not blocked:
+                unblocked["clean_green"] += int(rating == "green")
+                unblocked["clean_total"] += 1
         exact_total += int(exact)
 
         # Citation gate: an unsupported green (claimed green with no quote that
@@ -199,9 +239,24 @@ def score_case(gold: dict, rows: list[dict], emissions: dict[str, dict] | None =
         "defect_total": defect_total,
         "defect_recall": _ratio(defect_flagged, defect_total),
         "defect_exact": _ratio(defect_exact, defect_total),
+        "retrieval_blocking_measured": measured,
+        "retrieval_blocked_total": len(blocked_rules),
+        "retrieval_blocked_rules": blocked_rules,
+        "defect_total_unblocked": unblocked["defect_total"],
+        "defect_recall_unblocked": _ratio(
+            unblocked["defect_flagged"], unblocked["defect_total"]
+        ),
+        "defect_exact_unblocked": _ratio(unblocked["defect_exact"], unblocked["defect_total"]),
+        "clean_total_unblocked": unblocked["clean_total"],
+        "false_positive_rate_unblocked": _ratio(
+            unblocked["clean_total"] - unblocked["clean_green"], unblocked["clean_total"]
+        ),
         "gap_total": gap_total,
         "gap_recall": _ratio(gap_recalled_n, gap_total),
         "gap_flagged": _ratio(gap_flagged_n, gap_total),
+        "gap_red_without_reason": len(gap_reason_missing),
+        "gap_red_without_reason_rules": gap_reason_missing,
+        "gap_not_red_rules": gap_not_red,
         "clean_total": clean_total,
         "clean_pass_rate": _ratio(clean_green, clean_total),
         "false_positive_rate": _ratio(false_positives, clean_total),
@@ -222,13 +277,15 @@ def score_case(gold: dict, rows: list[dict], emissions: dict[str, dict] | None =
     }
 
 
-def _bucket_totals(results: list[dict], bucket: str | None, predicate) -> tuple[int, int]:
+def _bucket_totals(results: list[dict], bucket: str | None, predicate, *, skip_blocked: bool = False) -> tuple[int, int]:
     """Pool one predicate over every annotated rule (bucket=None = all kinds)."""
 
     hit = total = 0
     for result in results:
         for detail in result["metrics"]["details"]:
             if bucket is not None and detail["kind"] != bucket:
+                continue
+            if skip_blocked and detail.get("retrieval_blocked"):
                 continue
             total += 1
             hit += int(predicate(detail))
@@ -240,7 +297,15 @@ def aggregate(results: list[dict]) -> dict:
 
     defect_hit, defect_total = _bucket_totals(results, "defect", lambda d: d["flagged"])
     defect_exact, _ = _bucket_totals(results, "defect", lambda d: d["exact"])
+    blocked_hit, _ = _bucket_totals(results, None, lambda d: d.get("retrieval_blocked"))
+    defect_hit_ok, defect_total_ok = _bucket_totals(
+        results, "defect", lambda d: d["flagged"], skip_blocked=True
+    )
+    clean_green_ok, clean_total_ok = _bucket_totals(
+        results, "clean", lambda d: d["actual"] == "green", skip_blocked=True
+    )
     gap_hit, gap_total = _bucket_totals(results, "gap", lambda d: d["gap_recalled"])
+    gap_flagged_hit, _ = _bucket_totals(results, "gap", lambda d: d["flagged"])
     clean_green, clean_total = _bucket_totals(results, "clean", lambda d: d["actual"] == "green")
     exact_hit, exact_total = _bucket_totals(results, None, lambda d: d["exact"])
 
@@ -250,8 +315,23 @@ def aggregate(results: list[dict]) -> dict:
         "defect_total": defect_total,
         "defect_recall": _ratio(defect_hit, defect_total),
         "defect_exact": _ratio(defect_exact, defect_total),
+        "retrieval_blocking_measured": any(
+            r["metrics"].get("retrieval_blocking_measured") for r in results
+        ),
+        "retrieval_blocked_total": blocked_hit,
+        "retrieval_block_rate": _ratio(blocked_hit, exact_total),
+        "defect_total_unblocked": defect_total_ok,
+        "defect_recall_unblocked": _ratio(defect_hit_ok, defect_total_ok),
+        "clean_total_unblocked": clean_total_ok,
+        "false_positive_rate_unblocked": _ratio(
+            clean_total_ok - clean_green_ok, clean_total_ok
+        ),
         "gap_total": gap_total,
         "gap_recall": _ratio(gap_hit, gap_total),
+        "gap_flagged": _ratio(gap_flagged_hit, gap_total),
+        "gap_red_without_reason": sum(
+            int(r["metrics"].get("gap_red_without_reason") or 0) for r in results
+        ),
         "clean_total": clean_total,
         "clean_pass_rate": _ratio(clean_green, clean_total),
         "false_positive_rate": _ratio(clean_total - clean_green, clean_total),
@@ -373,6 +453,88 @@ class RecordingLLM:
         return response
 
 
+class OracleRetrieval:
+    """Hand the scorer the gold clauses instead of letting retrieval find them.
+
+    ``--retrieval oracle`` separates the two things a low score can mean: the
+    model judged wrong, or the engine never showed it the clause. Rules with a
+    gold annotation get exactly those clauses; gap rules have no gold clause by
+    construction and fall through to the real selector.
+    """
+
+    def __init__(self, gold: dict[str, list[int]], *, char_budget: int = 6000):
+        self.gold = {name: set(ordinals) for name, ordinals in gold.items()}
+        self.char_budget = char_budget
+        self.forced: list[str] = []
+        self.fell_back: list[str] = []
+
+    def select(self, clauses, rule_text: str, **kwargs):
+        from backend.engine.retrieval import select_clauses as real_select
+
+        name = next((key for key in self.gold if rule_text.startswith(key)), None)
+        picked = [clause for clause in clauses if clause.ordinal in self.gold.get(name, set())]
+        if not picked:
+            self.fell_back.append(name or rule_text.split(maxsplit=1)[0])
+            return real_select(clauses, rule_text, **kwargs)
+        # Same budget as the live path, so only recall differs between arms.
+        within_budget = []
+        used = 0
+        for clause in picked:
+            if used + len(clause.text) > self.char_budget and within_budget:
+                break
+            within_budget.append(clause)
+            used += len(clause.text)
+        self.forced.append(name)
+        return within_budget
+
+    def __enter__(self):
+        from backend.engine import scoring
+
+        self._previous = scoring.select_clauses
+        scoring.select_clauses = self.select
+        return self
+
+    def __exit__(self, *_exc):
+        from backend.engine import scoring
+
+        scoring.select_clauses = self._previous
+        return False
+
+
+class RetrievalProbe:
+    """Record what the live selector actually handed the scorer, rule by rule.
+
+    A missed planted defect means one of two things: the model judged wrongly, or
+    the clause never reached the prompt. Without this record the two are one
+    number, and a retrieval failure reads as a judgment failure.
+    """
+
+    def __init__(self):
+        self.selections: dict[str, list[int]] = {}
+
+    def select(self, clauses, rule_text: str, **kwargs):
+        from backend.engine.retrieval import select_clauses as real_select
+
+        picked = real_select(clauses, rule_text, **kwargs)
+        self.selections.setdefault(rule_text.split(maxsplit=1)[0], []).extend(
+            clause.ordinal for clause in picked
+        )
+        return picked
+
+    def __enter__(self):
+        from backend.engine import scoring
+
+        self._previous = scoring.select_clauses
+        scoring.select_clauses = self.select
+        return self
+
+    def __exit__(self, *_exc):
+        from backend.engine import scoring
+
+        scoring.select_clauses = self._previous
+        return False
+
+
 # -------------------------------------------------------------------------- runner
 
 
@@ -489,6 +651,7 @@ def run_case(
     fake: str | None,
     model: str | None = None,
     temperature: float = EVAL_TEMPERATURE,
+    retrieval: str | None = None,
 ) -> dict:
     from backend.documents.models import Rule
     from backend.documents.service import create_document
@@ -501,6 +664,9 @@ def run_case(
     document_path = PROJECT_ROOT / case["document"]
     content = document_path.read_bytes()
     document_text = document_path.read_text(encoding="utf-8", errors="ignore")
+    from backend.engine.parsing import split_clauses
+
+    clause_chars = sum(len(clause.text) for clause in split_clauses(document_text))
 
     session = platform_session()
     try:
@@ -547,24 +713,49 @@ def run_case(
             "去掉 --live-db 以使用隔离临时数据库，或删除该文档后重试。"
         )
 
+    oracle = None
+    probe = None
+    if retrieval == "oracle":
+        gold_map = case.get("retrieval_gold")
+        if not gold_map:
+            raise ValueError(f"{case['id']}：--retrieval oracle 需要该用例带 retrieval_gold 标注")
+        oracle = OracleRetrieval(gold_map)
+    elif case.get("retrieval_gold"):
+        probe = RetrievalProbe()
+
     started = time.perf_counter()
-    run_review(document_id, trigger="seeded-eval", custom_llm=llm)
+    if oracle is not None:
+        with oracle:
+            run_review(document_id, trigger="seeded-eval", custom_llm=llm)
+    elif probe is not None:
+        with probe:
+            run_review(document_id, trigger="seeded-eval", custom_llm=llm)
+    else:
+        run_review(document_id, trigger="seeded-eval", custom_llm=llm)
     wall_ms = int((time.perf_counter() - started) * 1000)
 
     rows, extra = _read_verdicts(document_id)
-    metrics = score_case(gold_index(case), rows, recorder.records)
+    metrics = score_case(
+        gold_index(case),
+        rows,
+        recorder.records,
+        retrieval_gold=case.get("retrieval_gold"),
+        selections=probe.selections if probe else None,
+    )
     meta = _engine_run_meta(document_id)
     playbook = get_playbook(case["playbook_id"])
-    return {
+    result = {
         "case_id": case["id"],
         "title": case.get("title", ""),
         "playbook_id": case["playbook_id"],
         "playbook_name": playbook.name,
         "document": case["document"],
         "friendly_id": friendly_id,
+        "clause_chars": clause_chars,
         "wall_ms": wall_ms,
         "latency_ms": int(meta.get("latency_ms") or wall_ms),
         "retrieval_mode": meta.get("retrieval_mode"),
+        "retrieval_arm": retrieval,
         "run_temperature": None if fake else temperature,
         "run_status": meta.get("run_status"),
         "scoring_failures": meta.get("scoring_failures"),
@@ -572,6 +763,14 @@ def run_case(
         "scorecard": extra["scorecard"],
         "metrics": metrics,
     }
+    if oracle is not None:
+        result["oracle_forced_rules"] = sorted(set(oracle.forced))
+        result["oracle_fallback_rules"] = sorted(set(oracle.fell_back))
+    if probe is not None:
+        result["retrieval_selections"] = {
+            rule: sorted(set(ordinals)) for rule, ordinals in probe.selections.items()
+        }
+    return result
 
 
 def _describe_error(exc: BaseException) -> str:
@@ -606,12 +805,24 @@ def _fresh_isolated_database() -> None:
 
 
 def _run_case_with_retry(
-    case: dict, *, fake: str | None, attempts: int, model: str | None, temperature: float
+    case: dict,
+    *,
+    fake: str | None,
+    attempts: int,
+    model: str | None,
+    temperature: float,
+    retrieval: str | None = None,
 ) -> dict:
     attempt = 1
     while True:
         try:
-            return run_case(case, fake=fake, model=model, temperature=temperature)
+            return run_case(
+                case,
+                fake=fake,
+                model=model,
+                temperature=temperature,
+                retrieval=retrieval,
+            )
         except Exception as exc:  # noqa: BLE001 — one flaky API call must not eat the run
             if attempt >= attempts:
                 raise
@@ -639,9 +850,31 @@ def _money(value) -> str:
     return "—" if not value else f"${float(value):.4f}"
 
 
-def _counts(results: list[dict], bucket: str, predicate) -> str:
-    hit, total = _bucket_totals(results, bucket, predicate)
+def _counts(results: list[dict], bucket: str, predicate, *, skip_blocked: bool = False) -> str:
+    hit, total = _bucket_totals(results, bucket, predicate, skip_blocked=skip_blocked)
     return f"{hit}/{total}" if total else "—"
+
+
+def _blocking_rows(results: list[dict], overall: dict) -> list[str]:
+    """Rows that separate retrieval failure from judgment failure.
+
+    Empty for a corpus whose rules carry no gold clause map (the v1 baseline):
+    there the question cannot be asked, so it must not be answered either.
+    """
+
+    if not overall.get("retrieval_blocking_measured"):
+        return []
+    blocked = overall["retrieval_blocked_total"]
+    return [
+        f"| **检索阻断率** | {_pct(overall['retrieval_block_rate'])} | {blocked}/{overall['rules_scored']} "
+        "| 金标条款根本没进模型上下文的规则（引擎侧硬伤，不是判定能力） |",
+        f"| 缺陷召回（剔除阻断） | {_pct(overall['defect_recall_unblocked'])} "
+        f"| {_counts(results, 'defect', lambda d: d['flagged'], skip_blocked=True)} "
+        "| 只算金标条款确实送到模型眼前的缺陷 |",
+        f"| 误报率（剔除阻断） | {_pct(overall['false_positive_rate_unblocked'])} "
+        f"| {_counts(results, 'clean', lambda d: d['actual'] in FLAGGED, skip_blocked=True)} "
+        "| 剔除因没看到条款而误判的合规条款 |",
+    ]
 
 
 def _temperature_line(results: list[dict]) -> list[str]:
@@ -703,6 +936,7 @@ def render_markdown(
     fake: str | None,
     failed: list[str] | None = None,
     passes: list[list[dict]] | None = None,
+    retrieval_arm: str | None = None,
 ) -> str:
     overall = aggregate(results)
     mode = {"all_red": "MechanicsFake · 全红", "green_hallucinated": "MechanicsFake · 幻觉绿色"}.get(
@@ -716,7 +950,13 @@ def render_markdown(
         f"语料：{len(max(passes, key=len)) if passes else len(results)} 份合成文档"
         + (f" × {len(passes)} 轮" if passes and len(passes) > 1 else "")
         + f" / {overall['rules_scored']} 条规则判定",
-        f"条款检索：{', '.join(sorted({str(r['retrieval_mode']) for r in results}))}",
+        f"条款检索：{', '.join(sorted({str(r['retrieval_mode']) for r in results}))}"
+        + (
+            "（**oracle 臂**：有金标的规则直接投喂金标条款，衡量判定上限而非线上能力；"
+            "整段缺失的规则本就没有金标条款，仍走真实检索）"
+            if retrieval_arm == "oracle"
+            else ""
+        ),
         *_temperature_line(results),
         f"评分模型：**{', '.join(overall['models']) or '—'}** · {overall['llm_calls']} 次调用 · "
         f"tokens {overall['input_tokens']}/{overall['output_tokens']}（{overall['token_source']}） · "
@@ -740,9 +980,12 @@ def render_markdown(
         "| 红/黄等级与人工预期完全一致 |",
         f"| 缺口召回 | {_pct(overall['gap_recall'])} | {_counts(results, 'gap', lambda d: d['gap_recalled'])} "
         "| 整段缺失被正确判红且给出 gap_reason |",
+        f"| └ 判红但 gap_reason 为空 | {overall['gap_red_without_reason']} 条 | — "
+        "| 缺口已发现、理由写在 rationale：口径损失，不是漏检 |",
         f"| 干净条款通过率 | {_pct(overall['clean_pass_rate'])} | {_counts(results, 'clean', lambda d: d['actual'] == 'green')} "
         "| 合规诱饵未被误报的比例 |",
         f"| **误报率** | {_pct(overall['false_positive_rate'])} | — | 合规条款被判红/黄（签字负担的直接来源） |",
+        *_blocking_rows(results, overall),
         f"| 整体等级一致率 | {_pct(overall['exact_agreement'])} | — | 全规则精确匹配 |",
         f"| 引用真实率 | {_pct(overall['citation_genuineness'])} | "
         f"{overall['citations_emitted'] - overall['citations_invalid']}/{overall['citations_emitted']} "
@@ -830,11 +1073,24 @@ def render_markdown(
             )
         lines.append("")
 
+    budget = 6000
+    oversized = [result["case_id"] for result in results if (result.get("clause_chars") or 0) > budget]
+    if oversized:
+        corpus_note = (
+            f"- {len(oversized)}/{len(results)} 份文档的条款正文超过检索预算（{budget} 字符），"
+            f"本评测因此混入检索召回因素：{', '.join(oversized)}。"
+            "判定上限见 `--retrieval oracle` 臂，检索质量本身另见 `scripts/evaluate_retrieval.py`。"
+        )
+    else:
+        corpus_note = (
+            f"- 金标集为合成文档：每份的条款正文都短于条款检索预算（{budget} 字符），"
+            "因此本评测衡量的是**评分与引用治理**，不混入检索召回因素；"
+            "检索质量的评测见 `scripts/evaluate_retrieval.py`。"
+        )
     lines += [
         "## 说明与局限",
         "",
-        "- 金标集为合成文档：每份都短于条款检索预算（6000 字符），因此本评测衡量的是**评分与引用治理**，"
-        "不混入检索召回因素；检索质量的评测见 `scripts/evaluate_retrieval.py`。",
+        corpus_note,
         "- 每条规则都被显式标注为 clean/defect/gap，未标注即视为金标集缺陷（脚本会直接报错），"
         "因此不存在“模型判了什么但没人核对”的盲区。",
         "- 缺陷与缺口的判定标准来自剧本 guidance 的阈值原文，人工可复核；等级一致率低于召回率属正常"
@@ -861,13 +1117,22 @@ def main() -> int:
     )
     parser.add_argument("--only", help="仅运行指定 case id（逗号分隔）")
     parser.add_argument(
+        "--cases",
+        type=Path,
+        default=CASES_PATH,
+        help=f"金标集 JSON 路径（默认 {CASES_PATH.relative_to(PROJECT_ROOT)}）",
+    )
+    parser.add_argument("--report", type=Path, default=REPORT_PATH, help="Markdown 报告输出路径")
+    parser.add_argument("--metrics", type=Path, default=METRICS_PATH, help="JSON 指标输出路径")
+    parser.add_argument(
         "--model",
         help="覆盖评分模型；默认沿用 .env 的 DEEPSEEK_MODEL",
     )
     parser.add_argument(
         "--retrieval",
-        choices=("keyword", "semantic", "hybrid"),
-        help="子句检索模式；默认沿用 RETRIEVAL_MODE（hybrid）",
+        choices=("keyword", "semantic", "hybrid", "oracle"),
+        help="子句检索模式；默认沿用 RETRIEVAL_MODE（hybrid）。oracle 不是线上模式："
+        "它把有金标的规则的条款选择直接换成金标条款，用来区分“判错”与“没送到模型眼前”",
     )
     parser.add_argument(
         "--temperature",
@@ -889,7 +1154,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    cases = load_cases()
+    cases = load_cases(args.cases)
     if args.list:
         for case in cases:
             print(
@@ -912,7 +1177,11 @@ def main() -> int:
         print(f"[FAIL] {exc}")
         return 1
     print(f"[INFO] 评分模型：{selected_model} · 判定温度：{args.temperature:g}", flush=True)
-    if args.retrieval:
+    if args.retrieval == "oracle":
+        # Selection is overridden per rule; the engine mode only decides the
+        # fallback for gap rules, which have no gold clause to force.
+        os.environ["RETRIEVAL_MODE"] = "keyword"
+    elif args.retrieval:
         os.environ["RETRIEVAL_MODE"] = args.retrieval
     elif args.fake:
         # offline pass only validates the harness — don't pay for the embedder
@@ -948,6 +1217,7 @@ def main() -> int:
                         attempts=attempts,
                         model=selected_model,
                         temperature=args.temperature,
+                        retrieval=args.retrieval,
                     )
                 )
             except Exception as exc:  # noqa: BLE001 — reported below, not re-raised
@@ -960,16 +1230,21 @@ def main() -> int:
         print("所有用例均未完成，报告未写入。")
         return 1
 
-    REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    REPORT_PATH.write_text(
-        render_markdown(results, fake=args.fake, failed=failed, passes=passes),
+    args.report.parent.mkdir(parents=True, exist_ok=True)
+    args.metrics.parent.mkdir(parents=True, exist_ok=True)
+    args.report.write_text(
+        render_markdown(
+            results, fake=args.fake, failed=failed, passes=passes, retrieval_arm=args.retrieval
+        ),
         encoding="utf-8",
     )
-    METRICS_PATH.write_text(
+    args.metrics.write_text(
         json.dumps(
             {"generated_at": datetime.now(timezone.utc).isoformat(), "fake": args.fake,
              "model": selected_model, "temperature": args.temperature,
              "retrieval_mode": os.environ.get("RETRIEVAL_MODE"),
+             "retrieval_arm": args.retrieval,
+             "cases_file": str(args.cases),
              "failed_cases": failed,
              "overall": aggregate(results),
              "passes": [aggregate(items) for items in passes],
@@ -980,7 +1255,8 @@ def main() -> int:
         encoding="utf-8",
     )
     overall = aggregate(results)
-    print(f"Wrote {REPORT_PATH}")
+    print(f"Wrote {args.report}")
+    print(f"Wrote {args.metrics}")
     if len(passes) > 1:
         rates = [
             value
