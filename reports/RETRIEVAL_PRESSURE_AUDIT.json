@@ -1,0 +1,997 @@
+{
+  "rows": [
+    {
+      "case": "CG-SEED-01",
+      "rule": "付款账期",
+      "gold_ordinals": [
+        4
+      ],
+      "chars_total": 9062,
+      "clause_count": 21,
+      "with_heading": {
+        "selected": [
+          4,
+          5,
+          8,
+          18,
+          19,
+          21
+        ],
+        "signal_clauses": 7,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.167,
+        "cause": "OK"
+      },
+      "heading_stripped": {
+        "selected": [
+          4,
+          5,
+          8,
+          18,
+          19,
+          21
+        ],
+        "signal_clauses": 7,
+        "gold_rank": 6,
+        "chars_ahead_of_gold": 7789,
+        "precision": 0.167,
+        "cause": "OK"
+      }
+    },
+    {
+      "case": "CG-SEED-01",
+      "rule": "责任上限",
+      "gold_ordinals": [
+        5
+      ],
+      "chars_total": 9062,
+      "clause_count": 21,
+      "with_heading": {
+        "selected": [
+          1,
+          3,
+          5,
+          6,
+          7,
+          8,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19
+        ],
+        "signal_clauses": 14,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.083,
+        "cause": "OK"
+      },
+      "heading_stripped": {
+        "selected": [
+          1,
+          3,
+          5,
+          6,
+          7,
+          8,
+          12,
+          15,
+          16,
+          17,
+          18,
+          19
+        ],
+        "signal_clauses": 14,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.083,
+        "cause": "OK"
+      }
+    },
+    {
+      "case": "CG-SEED-01",
+      "rule": "知识产权归属",
+      "gold_ordinals": [
+        7
+      ],
+      "chars_total": 9062,
+      "clause_count": 21,
+      "with_heading": {
+        "selected": [
+          2,
+          7,
+          18,
+          19
+        ],
+        "signal_clauses": 6,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.25,
+        "cause": "OK"
+      },
+      "heading_stripped": {
+        "selected": [
+          2,
+          7,
+          18,
+          19,
+          21
+        ],
+        "signal_clauses": 6,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.2,
+        "cause": "OK"
+      }
+    },
+    {
+      "case": "CG-SEED-01",
+      "rule": "数据保护义务",
+      "gold_ordinals": [
+        8
+      ],
+      "chars_total": 9062,
+      "clause_count": 21,
+      "with_heading": {
+        "selected": [
+          1,
+          2,
+          6,
+          8,
+          9,
+          10,
+          18,
+          19
+        ],
+        "signal_clauses": 10,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.125,
+        "cause": "OK"
+      },
+      "heading_stripped": {
+        "selected": [
+          1,
+          2,
+          6,
+          8,
+          9,
+          10,
+          18,
+          19
+        ],
+        "signal_clauses": 10,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.125,
+        "cause": "OK"
+      }
+    },
+    {
+      "case": "CG-SEED-01",
+      "rule": "数据泄露通知",
+      "gold_ordinals": [
+        9
+      ],
+      "chars_total": 9062,
+      "clause_count": 21,
+      "with_heading": {
+        "selected": [
+          1,
+          2,
+          5,
+          6,
+          8,
+          9,
+          10,
+          13,
+          18,
+          19
+        ],
+        "signal_clauses": 12,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.1,
+        "cause": "OK"
+      },
+      "heading_stripped": {
+        "selected": [
+          1,
+          2,
+          5,
+          6,
+          8,
+          9,
+          10,
+          13,
+          18,
+          19
+        ],
+        "signal_clauses": 12,
+        "gold_rank": 4,
+        "chars_ahead_of_gold": 220,
+        "precision": 0.1,
+        "cause": "OK"
+      }
+    },
+    {
+      "case": "CG-SEED-01",
+      "rule": "响应时限",
+      "gold_ordinals": [
+        13
+      ],
+      "chars_total": 9062,
+      "clause_count": 21,
+      "with_heading": {
+        "selected": [
+          8,
+          10,
+          13,
+          17
+        ],
+        "signal_clauses": 4,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.25,
+        "cause": "OK"
+      },
+      "heading_stripped": {
+        "selected": [
+          8,
+          10,
+          13,
+          17
+        ],
+        "signal_clauses": 4,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.25,
+        "cause": "OK"
+      }
+    },
+    {
+      "case": "CG-SEED-01",
+      "rule": "适用法律",
+      "gold_ordinals": [
+        16
+      ],
+      "chars_total": 9062,
+      "clause_count": 21,
+      "with_heading": {
+        "selected": [
+          6,
+          16,
+          18,
+          19,
+          21
+        ],
+        "signal_clauses": 8,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.2,
+        "cause": "OK"
+      },
+      "heading_stripped": {
+        "selected": [
+          6,
+          16,
+          18,
+          19,
+          21
+        ],
+        "signal_clauses": 8,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.2,
+        "cause": "OK"
+      }
+    },
+    {
+      "case": "CG-SEED-01",
+      "rule": "审计权",
+      "gold_ordinals": [
+        17
+      ],
+      "chars_total": 9062,
+      "clause_count": 21,
+      "with_heading": {
+        "selected": [
+          8,
+          9,
+          12,
+          17,
+          18,
+          19
+        ],
+        "signal_clauses": 8,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.167,
+        "cause": "OK"
+      },
+      "heading_stripped": {
+        "selected": [
+          8,
+          9,
+          12,
+          17,
+          18,
+          19
+        ],
+        "signal_clauses": 8,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.167,
+        "cause": "OK"
+      }
+    },
+    {
+      "case": "CG-SEED-02",
+      "rule": "适用法律",
+      "gold_ordinals": [
+        9
+      ],
+      "chars_total": 9021,
+      "clause_count": 14,
+      "with_heading": {
+        "selected": [
+          9,
+          10,
+          11,
+          13
+        ],
+        "signal_clauses": 7,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.25,
+        "cause": "OK"
+      },
+      "heading_stripped": {
+        "selected": [
+          9,
+          10,
+          11,
+          12
+        ],
+        "signal_clauses": 7,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.25,
+        "cause": "OK"
+      }
+    },
+    {
+      "case": "CG-SEED-03",
+      "rule": "付款账期",
+      "gold_ordinals": [
+        4
+      ],
+      "chars_total": 9041,
+      "clause_count": 22,
+      "with_heading": {
+        "selected": [
+          4,
+          5,
+          6,
+          14,
+          18,
+          19,
+          20,
+          22
+        ],
+        "signal_clauses": 9,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.125,
+        "cause": "OK"
+      },
+      "heading_stripped": {
+        "selected": [
+          5,
+          6,
+          14,
+          18,
+          19,
+          20,
+          22
+        ],
+        "signal_clauses": 8,
+        "gold_rank": null,
+        "chars_ahead_of_gold": null,
+        "precision": 0.0,
+        "cause": "NO_SIGNAL"
+      }
+    },
+    {
+      "case": "CG-SEED-03",
+      "rule": "责任上限",
+      "gold_ordinals": [
+        5
+      ],
+      "chars_total": 9041,
+      "clause_count": 22,
+      "with_heading": {
+        "selected": [
+          1,
+          3,
+          5,
+          6,
+          7,
+          8,
+          12,
+          16,
+          17,
+          18,
+          19,
+          20
+        ],
+        "signal_clauses": 14,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.083,
+        "cause": "OK"
+      },
+      "heading_stripped": {
+        "selected": [
+          1,
+          3,
+          5,
+          6,
+          7,
+          8,
+          12,
+          16,
+          17,
+          18,
+          19,
+          20
+        ],
+        "signal_clauses": 14,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.083,
+        "cause": "OK"
+      }
+    },
+    {
+      "case": "CG-SEED-03",
+      "rule": "知识产权归属",
+      "gold_ordinals": [
+        7
+      ],
+      "chars_total": 9041,
+      "clause_count": 22,
+      "with_heading": {
+        "selected": [
+          2,
+          7,
+          10,
+          18,
+          19,
+          20
+        ],
+        "signal_clauses": 8,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.167,
+        "cause": "OK"
+      },
+      "heading_stripped": {
+        "selected": [
+          2,
+          7,
+          10,
+          18,
+          19,
+          20,
+          22
+        ],
+        "signal_clauses": 8,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.143,
+        "cause": "OK"
+      }
+    },
+    {
+      "case": "CG-SEED-03",
+      "rule": "数据保护义务",
+      "gold_ordinals": [
+        8
+      ],
+      "chars_total": 9041,
+      "clause_count": 22,
+      "with_heading": {
+        "selected": [
+          1,
+          2,
+          6,
+          8,
+          9,
+          10,
+          18,
+          19,
+          20
+        ],
+        "signal_clauses": 11,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.111,
+        "cause": "OK"
+      },
+      "heading_stripped": {
+        "selected": [
+          1,
+          2,
+          6,
+          8,
+          9,
+          10,
+          18,
+          19,
+          20
+        ],
+        "signal_clauses": 11,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.111,
+        "cause": "OK"
+      }
+    },
+    {
+      "case": "CG-SEED-03",
+      "rule": "数据泄露通知",
+      "gold_ordinals": [
+        9
+      ],
+      "chars_total": 9041,
+      "clause_count": 22,
+      "with_heading": {
+        "selected": [
+          1,
+          2,
+          5,
+          6,
+          8,
+          9,
+          10,
+          13,
+          14,
+          18,
+          19,
+          20
+        ],
+        "signal_clauses": 14,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.083,
+        "cause": "OK"
+      },
+      "heading_stripped": {
+        "selected": [
+          1,
+          2,
+          5,
+          6,
+          8,
+          9,
+          10,
+          13,
+          14,
+          18,
+          19,
+          20
+        ],
+        "signal_clauses": 14,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.083,
+        "cause": "OK"
+      }
+    },
+    {
+      "case": "CG-SEED-03",
+      "rule": "响应时限",
+      "gold_ordinals": [
+        13
+      ],
+      "chars_total": 9041,
+      "clause_count": 22,
+      "with_heading": {
+        "selected": [
+          8,
+          9,
+          10,
+          13,
+          14,
+          16,
+          18
+        ],
+        "signal_clauses": 7,
+        "gold_rank": 2,
+        "chars_ahead_of_gold": 82,
+        "precision": 0.143,
+        "cause": "OK"
+      },
+      "heading_stripped": {
+        "selected": [
+          8,
+          9,
+          10,
+          13,
+          14,
+          16,
+          18
+        ],
+        "signal_clauses": 7,
+        "gold_rank": 2,
+        "chars_ahead_of_gold": 82,
+        "precision": 0.143,
+        "cause": "OK"
+      }
+    },
+    {
+      "case": "CG-SEED-03",
+      "rule": "适用法律",
+      "gold_ordinals": [
+        17
+      ],
+      "chars_total": 9041,
+      "clause_count": 22,
+      "with_heading": {
+        "selected": [
+          6,
+          7,
+          17,
+          19,
+          20,
+          22
+        ],
+        "signal_clauses": 7,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.167,
+        "cause": "OK"
+      },
+      "heading_stripped": {
+        "selected": [
+          17,
+          19,
+          20,
+          21
+        ],
+        "signal_clauses": 7,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.25,
+        "cause": "OK"
+      }
+    },
+    {
+      "case": "CG-SEED-03",
+      "rule": "审计权",
+      "gold_ordinals": [
+        18
+      ],
+      "chars_total": 9041,
+      "clause_count": 22,
+      "with_heading": {
+        "selected": [
+          4,
+          8,
+          9,
+          12,
+          16,
+          18,
+          19,
+          20
+        ],
+        "signal_clauses": 10,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.125,
+        "cause": "OK"
+      },
+      "heading_stripped": {
+        "selected": [
+          4,
+          8,
+          9,
+          12,
+          16,
+          18,
+          19,
+          20
+        ],
+        "signal_clauses": 10,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.125,
+        "cause": "OK"
+      }
+    },
+    {
+      "case": "DI-SEED-01",
+      "rule": "时间与里程碑",
+      "gold_ordinals": [
+        6
+      ],
+      "chars_total": 9031,
+      "clause_count": 32,
+      "with_heading": {
+        "selected": [
+          2,
+          6,
+          7,
+          8,
+          10,
+          12,
+          14,
+          15,
+          17,
+          28,
+          29
+        ],
+        "signal_clauses": 13,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.091,
+        "cause": "OK"
+      },
+      "heading_stripped": {
+        "selected": [
+          6,
+          7,
+          8,
+          10,
+          12,
+          14,
+          15,
+          17,
+          28,
+          29
+        ],
+        "signal_clauses": 12,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.1,
+        "cause": "OK"
+      }
+    },
+    {
+      "case": "DI-SEED-01",
+      "rule": "验收标准",
+      "gold_ordinals": [
+        13,
+        14
+      ],
+      "chars_total": 9031,
+      "clause_count": 32,
+      "with_heading": {
+        "selected": [
+          7,
+          10,
+          13,
+          14,
+          15,
+          17,
+          19,
+          28,
+          29
+        ],
+        "signal_clauses": 11,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.222,
+        "cause": "OK"
+      },
+      "heading_stripped": {
+        "selected": [
+          7,
+          10,
+          13,
+          14,
+          15,
+          17,
+          19,
+          28,
+          29
+        ],
+        "signal_clauses": 11,
+        "gold_rank": 1,
+        "chars_ahead_of_gold": 0,
+        "precision": 0.222,
+        "cause": "OK"
+      }
+    }
+  ],
+  "unmapped": [
+    {
+      "case": "CG-SEED-01",
+      "rules_without_heading_gold": [
+        "定价清晰度",
+        "交付与验收条款",
+        "终止条款",
+        "数据存储地",
+        "可用性承诺",
+        "违约补偿条款",
+        "分包披露"
+      ]
+    },
+    {
+      "case": "CG-SEED-02",
+      "rules_without_heading_gold": [
+        "付款账期",
+        "定价清晰度",
+        "交付与验收条款",
+        "责任上限",
+        "终止条款",
+        "知识产权归属",
+        "数据保护义务",
+        "数据泄露通知",
+        "数据存储地",
+        "可用性承诺",
+        "响应时限",
+        "违约补偿条款",
+        "审计权",
+        "分包披露"
+      ]
+    },
+    {
+      "case": "CG-SEED-03",
+      "rules_without_heading_gold": [
+        "定价清晰度",
+        "交付与验收条款",
+        "终止条款",
+        "数据存储地",
+        "可用性承诺",
+        "违约补偿条款",
+        "分包披露"
+      ]
+    },
+    {
+      "case": "DI-SEED-01",
+      "rules_without_heading_gold": [
+        "需求范围明确",
+        "关键角色与联系人",
+        "范围蔓延风险",
+        "不切实际的承诺",
+        "依赖与前置条件",
+        "单点依赖",
+        "计费与结算",
+        "责任与赔偿",
+        "数据处理合规",
+        "保密与知识产权"
+      ]
+    }
+  ],
+  "filler_leaks": [
+    "CG-SEED-01: 填充段「标题与解释」对规则「责任上限」有 1 分信号",
+    "CG-SEED-01: 填充段「标题与解释」对规则「终止条款」有 1 分信号",
+    "CG-SEED-01: 填充段「通知与送达」对规则「交付与验收条款」有 1 分信号",
+    "CG-SEED-01: 填充段「通知与送达」对规则「责任上限」有 1 分信号",
+    "CG-SEED-01: 填充段「通知与送达」对规则「终止条款」有 2 分信号",
+    "CG-SEED-01: 填充段「通知与送达」对规则「知识产权归属」有 1 分信号",
+    "CG-SEED-01: 填充段「通知与送达」对规则「数据泄露通知」有 1 分信号",
+    "CG-SEED-01: 填充段「通知与送达」对规则「适用法律」有 1 分信号",
+    "CG-SEED-01: 填充段「通知与送达」对规则「分包披露」有 2 分信号",
+    "CG-SEED-01: 填充段「合同份数与文本效力」对规则「责任上限」有 1 分信号",
+    "CG-SEED-01: 填充段「合同份数与文本效力」对规则「终止条款」有 2 分信号",
+    "CG-SEED-01: 填充段「合同份数与文本效力」对规则「适用法律」有 1 分信号",
+    "CG-SEED-01: 填充段「语言版本」对规则「责任上限」有 1 分信号",
+    "CG-SEED-01: 填充段「语言版本」对规则「终止条款」有 1 分信号",
+    "CG-SEED-01: 填充段「完整协议」对规则「责任上限」有 1 分信号",
+    "CG-SEED-01: 填充段「完整协议」对规则「终止条款」有 2 分信号",
+    "CG-SEED-01: 填充段「完整协议」对规则「数据保护义务」有 1 分信号",
+    "CG-SEED-01: 填充段「完整协议」对规则「审计权」有 1 分信号",
+    "CG-SEED-01: 填充段「完整协议」对规则「分包披露」有 1 分信号",
+    "CG-SEED-01: 填充段「可分割性」对规则「交付与验收条款」有 2 分信号",
+    "CG-SEED-01: 填充段「可分割性」对规则「责任上限」有 1 分信号",
+    "CG-SEED-01: 填充段「可分割性」对规则「终止条款」有 2 分信号",
+    "CG-SEED-01: 填充段「弃权」对规则「责任上限」有 1 分信号",
+    "CG-SEED-01: 填充段「弃权」对规则「终止条款」有 1 分信号",
+    "CG-SEED-01: 填充段「印鉴与签署管理」对规则「终止条款」有 2 分信号",
+    "CG-SEED-01: 填充段「印鉴与签署管理」对规则「数据泄露通知」有 1 分信号",
+    "CG-SEED-01: 填充段「印鉴与签署管理」对规则「适用法律」有 1 分信号",
+    "CG-SEED-01: 填充段「印鉴与签署管理」对规则「分包披露」有 2 分信号",
+    "CG-SEED-01: 填充段「工作日与节假日」对规则「责任上限」有 1 分信号",
+    "CG-SEED-01: 填充段「工作日与节假日」对规则「终止条款」有 1 分信号",
+    "CG-SEED-01: 填充段「账户信息」对规则「付款账期」有 2 分信号",
+    "CG-SEED-01: 填充段「账户信息」对规则「责任上限」有 1 分信号",
+    "CG-SEED-01: 填充段「账户信息」对规则「终止条款」有 3 分信号",
+    "CG-SEED-01: 填充段「账户信息」对规则「数据保护义务」有 1 分信号",
+    "CG-SEED-01: 填充段「账户信息」对规则「数据泄露通知」有 1 分信号",
+    "CG-SEED-01: 填充段「账户信息」对规则「分包披露」有 2 分信号",
+    "CG-SEED-02: 填充段「标题与解释」对规则「责任上限」有 1 分信号",
+    "CG-SEED-02: 填充段「标题与解释」对规则「终止条款」有 1 分信号",
+    "CG-SEED-02: 填充段「通知与送达」对规则「交付与验收条款」有 1 分信号",
+    "CG-SEED-02: 填充段「通知与送达」对规则「责任上限」有 1 分信号",
+    "CG-SEED-02: 填充段「通知与送达」对规则「终止条款」有 2 分信号",
+    "CG-SEED-02: 填充段「通知与送达」对规则「知识产权归属」有 1 分信号",
+    "CG-SEED-02: 填充段「通知与送达」对规则「数据泄露通知」有 1 分信号",
+    "CG-SEED-02: 填充段「通知与送达」对规则「适用法律」有 1 分信号",
+    "CG-SEED-02: 填充段「通知与送达」对规则「分包披露」有 2 分信号",
+    "CG-SEED-02: 填充段「合同份数与文本效力」对规则「责任上限」有 1 分信号",
+    "CG-SEED-02: 填充段「合同份数与文本效力」对规则「终止条款」有 2 分信号",
+    "CG-SEED-02: 填充段「合同份数与文本效力」对规则「适用法律」有 1 分信号",
+    "CG-SEED-02: 填充段「语言版本」对规则「责任上限」有 1 分信号",
+    "CG-SEED-02: 填充段「语言版本」对规则「终止条款」有 1 分信号",
+    "CG-SEED-02: 填充段「完整协议」对规则「责任上限」有 1 分信号",
+    "CG-SEED-02: 填充段「完整协议」对规则「终止条款」有 2 分信号",
+    "CG-SEED-02: 填充段「完整协议」对规则「数据保护义务」有 1 分信号",
+    "CG-SEED-02: 填充段「完整协议」对规则「审计权」有 1 分信号",
+    "CG-SEED-02: 填充段「完整协议」对规则「分包披露」有 1 分信号",
+    "CG-SEED-02: 填充段「可分割性」对规则「交付与验收条款」有 2 分信号",
+    "CG-SEED-02: 填充段「可分割性」对规则「责任上限」有 1 分信号",
+    "CG-SEED-02: 填充段「可分割性」对规则「终止条款」有 2 分信号",
+    "CG-SEED-02: 填充段「弃权」对规则「责任上限」有 1 分信号",
+    "CG-SEED-02: 填充段「弃权」对规则「终止条款」有 1 分信号",
+    "CG-SEED-02: 填充段「印鉴与签署管理」对规则「终止条款」有 2 分信号",
+    "CG-SEED-02: 填充段「印鉴与签署管理」对规则「数据泄露通知」有 1 分信号",
+    "CG-SEED-02: 填充段「印鉴与签署管理」对规则「适用法律」有 1 分信号",
+    "CG-SEED-02: 填充段「印鉴与签署管理」对规则「分包披露」有 2 分信号",
+    "CG-SEED-02: 填充段「工作日与节假日」对规则「责任上限」有 1 分信号",
+    "CG-SEED-02: 填充段「工作日与节假日」对规则「终止条款」有 1 分信号",
+    "CG-SEED-02: 填充段「账户信息」对规则「付款账期」有 2 分信号",
+    "CG-SEED-02: 填充段「账户信息」对规则「责任上限」有 1 分信号",
+    "CG-SEED-02: 填充段「账户信息」对规则「终止条款」有 3 分信号",
+    "CG-SEED-02: 填充段「账户信息」对规则「数据保护义务」有 1 分信号",
+    "CG-SEED-02: 填充段「账户信息」对规则「数据泄露通知」有 1 分信号",
+    "CG-SEED-02: 填充段「账户信息」对规则「分包披露」有 2 分信号",
+    "CG-SEED-03: 填充段「标题与解释」对规则「责任上限」有 1 分信号",
+    "CG-SEED-03: 填充段「标题与解释」对规则「终止条款」有 1 分信号",
+    "CG-SEED-03: 填充段「通知与送达」对规则「交付与验收条款」有 1 分信号",
+    "CG-SEED-03: 填充段「通知与送达」对规则「责任上限」有 1 分信号",
+    "CG-SEED-03: 填充段「通知与送达」对规则「终止条款」有 2 分信号",
+    "CG-SEED-03: 填充段「通知与送达」对规则「知识产权归属」有 1 分信号",
+    "CG-SEED-03: 填充段「通知与送达」对规则「数据泄露通知」有 1 分信号",
+    "CG-SEED-03: 填充段「通知与送达」对规则「适用法律」有 1 分信号",
+    "CG-SEED-03: 填充段「通知与送达」对规则「分包披露」有 2 分信号",
+    "CG-SEED-03: 填充段「合同份数与文本效力」对规则「责任上限」有 1 分信号",
+    "CG-SEED-03: 填充段「合同份数与文本效力」对规则「终止条款」有 2 分信号",
+    "CG-SEED-03: 填充段「合同份数与文本效力」对规则「适用法律」有 1 分信号",
+    "CG-SEED-03: 填充段「语言版本」对规则「责任上限」有 1 分信号",
+    "CG-SEED-03: 填充段「语言版本」对规则「终止条款」有 1 分信号",
+    "CG-SEED-03: 填充段「完整协议」对规则「责任上限」有 1 分信号",
+    "CG-SEED-03: 填充段「完整协议」对规则「终止条款」有 2 分信号",
+    "CG-SEED-03: 填充段「完整协议」对规则「数据保护义务」有 1 分信号",
+    "CG-SEED-03: 填充段「完整协议」对规则「审计权」有 1 分信号",
+    "CG-SEED-03: 填充段「完整协议」对规则「分包披露」有 1 分信号",
+    "CG-SEED-03: 填充段「可分割性」对规则「交付与验收条款」有 2 分信号",
+    "CG-SEED-03: 填充段「可分割性」对规则「责任上限」有 1 分信号",
+    "CG-SEED-03: 填充段「可分割性」对规则「终止条款」有 2 分信号",
+    "CG-SEED-03: 填充段「弃权」对规则「责任上限」有 1 分信号",
+    "CG-SEED-03: 填充段「弃权」对规则「终止条款」有 1 分信号",
+    "CG-SEED-03: 填充段「印鉴与签署管理」对规则「终止条款」有 2 分信号",
+    "CG-SEED-03: 填充段「印鉴与签署管理」对规则「数据泄露通知」有 1 分信号",
+    "CG-SEED-03: 填充段「印鉴与签署管理」对规则「适用法律」有 1 分信号",
+    "CG-SEED-03: 填充段「印鉴与签署管理」对规则「分包披露」有 2 分信号",
+    "CG-SEED-03: 填充段「工作日与节假日」对规则「责任上限」有 1 分信号",
+    "CG-SEED-03: 填充段「工作日与节假日」对规则「终止条款」有 1 分信号",
+    "CG-SEED-03: 填充段「账户信息」对规则「付款账期」有 2 分信号",
+    "CG-SEED-03: 填充段「账户信息」对规则「责任上限」有 1 分信号",
+    "CG-SEED-03: 填充段「账户信息」对规则「终止条款」有 3 分信号",
+    "CG-SEED-03: 填充段「账户信息」对规则「数据保护义务」有 1 分信号",
+    "CG-SEED-03: 填充段「账户信息」对规则「数据泄露通知」有 1 分信号",
+    "CG-SEED-03: 填充段「账户信息」对规则「分包披露」有 2 分信号",
+    "DI-SEED-01: 填充段「标题与解释」对规则「需求范围明确」有 1 分信号",
+    "DI-SEED-01: 填充段「标题与解释」对规则「关键角色与联系人」有 1 分信号",
+    "DI-SEED-01: 填充段「标题与解释」对规则「依赖与前置条件」有 1 分信号",
+    "DI-SEED-01: 填充段「标题与解释」对规则「计费与结算」有 1 分信号",
+    "DI-SEED-01: 填充段「通知与送达」对规则「需求范围明确」有 1 分信号",
+    "DI-SEED-01: 填充段「通知与送达」对规则「范围蔓延风险」有 2 分信号",
+    "DI-SEED-01: 填充段「通知与送达」对规则「保密与知识产权」有 1 分信号",
+    "DI-SEED-01: 填充段「合同份数与文本效力」对规则「验收标准」有 1 分信号",
+    "DI-SEED-01: 填充段「完整协议」对规则「验收标准」有 1 分信号",
+    "DI-SEED-01: 填充段「完整协议」对规则「时间与里程碑」有 1 分信号",
+    "DI-SEED-01: 填充段「完整协议」对规则「数据处理合规」有 2 分信号",
+    "DI-SEED-01: 填充段「可分割性」对规则「验收标准」有 1 分信号",
+    "DI-SEED-01: 填充段「可分割性」对规则「不切实际的承诺」有 1 分信号",
+    "DI-SEED-01: 填充段「印鉴与签署管理」对规则「验收标准」有 1 分信号",
+    "DI-SEED-01: 填充段「印鉴与签署管理」对规则「数据处理合规」有 1 分信号",
+    "DI-SEED-01: 填充段「账户信息」对规则「验收标准」有 1 分信号",
+    "DI-SEED-01: 填充段「账户信息」对规则「范围蔓延风险」有 1 分信号"
+  ]
+}
