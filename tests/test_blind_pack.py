@@ -24,12 +24,17 @@ from scripts.build_blind_pack import (  # noqa: E402
     export_rules_verbatim,
     render_task_md,
     scan_leaks,
+    select_cases,
+    strip_case_ids,
     strip_markers,
 )
 from backend.playbooks import get_playbook  # noqa: E402
 
 CASES = json.loads(
     (PROJECT_ROOT / "eval_cases" / "seeded_defect_cases.json").read_text(encoding="utf-8")
+)["cases"]
+V2_CASES = json.loads(
+    (PROJECT_ROOT / "eval_cases" / "seeded_defect_cases_v2.json").read_text(encoding="utf-8")
 )["cases"]
 
 
@@ -44,6 +49,18 @@ def test_document_names_are_opaque_counters():
     assert doc_name(25) == "DOC-Z.txt"
     assert doc_name(26) == "DOC-AA.txt"
     assert doc_name(0) != doc_name(1)
+
+
+def test_a_subset_keeps_corpus_order_because_that_order_names_the_docs():
+    picked = select_cases(V2_CASES, "DI-V2-03,CG-V2-02,CG-V2-05")
+
+    assert [case["id"] for case in picked] == ["CG-V2-02", "CG-V2-05", "DI-V2-03"]
+    assert select_cases(V2_CASES, None) == V2_CASES
+
+
+def test_an_unknown_case_id_is_refused_rather_than_dropped():
+    with pytest.raises(ValueError, match="CG-V2-99"):
+        select_cases(V2_CASES, "CG-V2-02,CG-V2-99")
 
 
 def test_pack_contains_docs_rules_and_task_and_nothing_else(tmp_path):
@@ -109,6 +126,30 @@ def test_a_finished_pack_passes_the_leak_scan(tmp_path):
 
     hits = scan_leaks(pack, banned=banned_strings(CASES))
     assert hits == [], f"包内仍有泄漏：{hits}"
+
+
+def test_strip_case_ids_removes_only_the_catalogue_line():
+    text = "某某采购合同\n\n文档编号：CG-V2-02\n甲方（采购方）：某某\n"
+
+    cleaned, removed = strip_case_ids(text, "CG-V2-02")
+
+    assert cleaned == "某某采购合同\n\n甲方（采购方）：某某\n"
+    assert removed == ["文档编号：CG-V2-02"]
+
+
+def test_the_v2_subset_pack_passes_the_leak_scan(tmp_path):
+    """v2 语料把自身编号写在正文里——那是一根指向公开仓库答案的线。"""
+
+    subset = select_cases(V2_CASES, "CG-V2-02,CG-V2-05,DI-V2-03,DI-V2-06")
+    mapping, _ = export_pack(subset, out_dir=tmp_path / "pack")
+    pack = tmp_path / "pack"
+
+    assert list(mapping) == [doc_name(index) for index in range(4)]
+    assert scan_leaks(pack, banned=banned_strings(subset)) == []
+    body = (pack / "docs" / doc_name(0)).read_text(encoding="utf-8")
+    fixture = (PROJECT_ROOT / subset[0]["document"]).read_text(encoding="utf-8")
+    assert "CG-V2-02" not in body and "文档编号" not in body
+    assert body.splitlines()[0] == fixture.splitlines()[0], "只准删编号行，标题必须原样保留"
 
 
 def test_leak_scan_catches_an_injected_answer_key(tmp_path):

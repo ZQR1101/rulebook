@@ -66,6 +66,7 @@ def check_coverage(gold: dict, rows: list[dict], label: str) -> list[str]:
 
 def score_document(harness, arm_dir: Path, doc_name: str, case: dict) -> tuple[dict, dict]:
     from backend.engine.citation_gate import validate_citations
+    from backend.engine.parsing import split_clauses
 
     text = (arm_dir / "docs" / f"{doc_name}.txt").read_text(encoding="utf-8")
     raw_rows = json.loads((arm_dir / "out" / f"{doc_name}.json").read_text(encoding="utf-8"))
@@ -94,7 +95,13 @@ def score_document(harness, arm_dir: Path, doc_name: str, case: dict) -> tuple[d
         }
 
     gold = harness.gold_index(case)
-    metrics = harness.score_case(gold, rows, emissions)
+    # Ordinals are defined by the fixture the gold was looked up in, not by the
+    # pack copy the agent read; the two differ at most by a stripped marker.
+    fixture = (PROJECT_ROOT / case["document"]).read_text(encoding="utf-8")
+    clause_texts = {clause.ordinal: clause.text for clause in split_clauses(fixture)}
+    metrics = harness.score_case(
+        gold, rows, emissions, retrieval_gold=case.get("retrieval_gold"), clause_texts=clause_texts
+    )
     result = {
         "case_id": case["id"],
         "arm": ARM_ID.get(doc_name, doc_name),
@@ -109,7 +116,14 @@ def score_document(harness, arm_dir: Path, doc_name: str, case: dict) -> tuple[d
 
 
 def render_markdown(
-    results: list[dict], pooled: dict, baseline: dict, problems: list[str], wall_minutes: float | None = None
+    results: list[dict],
+    pooled: dict,
+    baseline: dict,
+    problems: list[str],
+    wall_minutes: float | None = None,
+    *,
+    map_name: str = "blind_arm_map.json",
+    pack_note: str = "",
 ) -> str:
     engine_passes = baseline.get("passes") or []
     lines = [
@@ -126,14 +140,16 @@ def render_markdown(
         lines += [f"- {problem}" for problem in problems]
         lines.append("")
 
+    passes_label = f"{len(engine_passes)} 轮" if len(engine_passes) > 1 else "单轮"
     lines += [
         "## 两臂对照",
         "",
-        "| 指标 | 引擎基线（3 轮均值 / 极差） | 通用 agent（本轮） |",
+        f"| 指标 | 引擎基线（{passes_label}均值 / 极差） | 通用 agent（本轮） |",
         "|---|---|---|",
     ]
     rows = (
         ("defect_recall", "缺陷召回"),
+        ("defect_grounded_recall", "缺陷召回（引用锚定金标条款）"),
         ("gap_recall", "缺口召回"),
         ("false_positive_rate", "误报率"),
         ("exact_agreement", "整体等级一致率"),
@@ -154,9 +170,13 @@ def render_markdown(
         )
     )
     if wall_minutes:
+        engine_docs = max(engine_overall.get("documents") or len(engine_passes) or 1, 1)
         engine_pass_minutes = (engine_overall.get("total_latency_ms") or 0) / 1000 / 60 / max(len(engine_passes), 1)
-        lines.append(f"| 单轮整批墙钟（4 份文档） | ≈ {engine_pass_minutes:.1f} 分钟 | ≈ {wall_minutes:.1f} 分钟 |")
-    lines.append(f"| 成本 | 引擎 3 轮 ${baseline_cost(baseline)} | 不可比：档位与 token 不由评测侧掌握 |")
+        lines.append(
+            f"| 单轮整批墙钟（引擎 {engine_docs} 份 / 本臂 {len(results)} 份） "
+            f"| ≈ {engine_pass_minutes:.1f} 分钟 | ≈ {wall_minutes:.1f} 分钟 |"
+        )
+    lines.append(f"| 成本 | 引擎 {passes_label} ${baseline_cost(baseline)} | 不可比：档位与 token 不由评测侧掌握 |")
     lines += ["", f"本轮通用 agent 共判定 {pooled.get('rules_scored')} 条规则，"
                   f"发出引用 {pooled.get('citations_emitted')} 条，其中逐字可回溯 "
                   f"{(pooled.get('citations_emitted') or 0) - (pooled.get('citations_invalid') or 0)} 条。", ""]
@@ -166,17 +186,19 @@ def render_markdown(
     if not misses:
         lines.append("- 无")
     lines += misses
+    counts = sorted({len(result["metrics"]["details"]) for result in results})
+    questions = f"{counts[0]} 次" if len(counts) == 1 else f"{counts[0]}~{counts[-1]} 次"
     lines += [
         "",
         "## 说明与局限",
         "",
-        "- 语料改动只有一处：正文首行的「（合成评测样例）」标注已删除，文件名改为 DOC-A…DOC-D。"
-        "引用逐字校验因此针对仓库外工作区 `docs/` 下的副本，映射见 `eval_cases/blind_arm_map.json`。",
+        f"- 语料与映射：{pack_note or '包内正文与仓库语料的差异见映射文件的 _comment。'}"
+        f" 引用逐字校验针对仓库外工作区 `docs/` 下的副本，映射见 `eval_cases/{map_name}`。",
         "- 尺子是本仓库自标注的金标集：通用 agent 若用另一套同样合理的口径，会被记成漏报或误报。"
         "本对照回答的是「同样的信息，零定制的 agent 能到什么程度」，不是「专家会不会同意」。",
         "- 单轮读数。判定温度与模型档位均未受控，不构成测量；要出结论需 3 轮独立盲测并报极差。",
-        "- 引擎臂每份文档得到 15 次「一次一条规则」的独立提问；通用 agent 一次拿到全部规则。"
-        "这正是被测变量之一，不要把两者的差距全部归给「模型能力」。",
+        f"- 引擎臂每份文档得到 {questions}「一次一条规则」的独立提问，且受 6,000 字检索预算约束；"
+        "通用 agent 一次拿到全部规则并通读全文。这正是被测变量之一，不要把两者的差距全部归给「模型能力」。",
     ]
     return "\n".join(lines) + "\n"
 
@@ -206,7 +228,8 @@ def _misses(results: list[dict]) -> list[str]:
             kind, expected, actual = detail["kind"], detail["expected"], detail["actual"]
             if kind in ("defect", "gap") and not detail["flagged"]:
                 label = "漏报"
-            elif kind == "gap" and not detail["gap_recalled"]:
+            elif kind == "gap" and actual == "red" and not detail["gap_recalled"]:
+                # 口径损失 only when it did call red and still said nothing about the absence.
                 label = "判红但未说明缺失"
             elif kind == "clean" and detail["flagged"]:
                 label = "误报"
@@ -219,6 +242,30 @@ def _misses(results: list[dict]) -> list[str]:
                 f"（{kind} 预期 {expected} → 实判 {actual}）"
             )
     return lines
+
+
+def reslice_baseline(baseline: dict, harness, case_ids: set[str]) -> tuple[dict, str | None]:
+    """Pool the engine numbers over only the documents the pack contains.
+
+    A four-document pack cannot be read against a twenty-four-document
+    aggregate. Per-document verdicts are independent, so a single-pass baseline
+    can simply be re-pooled; a multi-pass one cannot, because the harness stores
+    only the last pass per document.
+    """
+
+    results = baseline.get("results") or []
+    kept = [row for row in results if row.get("case_id") in case_ids]
+    if not kept or len(kept) == len(results):
+        return baseline, None
+    passes = baseline.get("passes") or []
+    if len(passes) > 1:
+        return baseline, (
+            f"引擎基线覆盖 {len(results)} 份文档且跑了 {len(passes)} 轮，而本次盲测包只有 "
+            f"{len(kept)} 份；多轮基线只存最后一轮的按文档结果，无法重新池化——"
+            "请为同一子集重跑引擎，或按全量建包。"
+        )
+    pooled = harness.aggregate(kept)
+    return dict(baseline, results=kept, overall=pooled, passes=[pooled]), None
 
 
 def main() -> int:
@@ -238,9 +285,11 @@ def main() -> int:
     args = parser.parse_args()
 
     harness = _load_harness()
+    raw_map = json.loads(args.map.read_text(encoding="utf-8"))
+    pack_note = str(raw_map.get("_comment") or "").strip()
     mapping = {
         _doc_label(key): value
-        for key, value in json.loads(args.map.read_text(encoding="utf-8")).items()
+        for key, value in raw_map.items()
         if not key.startswith("_")
     }
     cases = {case["document"]: case for case in json.loads(args.cases.read_text(encoding="utf-8"))["cases"]}
@@ -261,7 +310,12 @@ def main() -> int:
 
     pooled = harness.aggregate(results)
     baseline = json.loads(args.baseline.read_text(encoding="utf-8"))
-    report = render_markdown(results, pooled, baseline, problems, args.wall_minutes)
+    baseline, mismatch = reslice_baseline(baseline, harness, {result["case_id"] for result in results})
+    if mismatch:
+        problems.append(mismatch)
+    report = render_markdown(
+        results, pooled, baseline, problems, args.wall_minutes, map_name=args.map.name, pack_note=pack_note
+    )
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(report, encoding="utf-8", newline="\n")
     args.metrics.write_text(

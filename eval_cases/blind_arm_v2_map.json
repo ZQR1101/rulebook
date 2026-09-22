@@ -1,0 +1,7 @@
+{
+  "_comment": "盲测包与原始语料的映射，仅供打分使用；不得放入包内。正文与原始语料的差异只有两处：剥掉自标注行、剥掉正文里的文档编号行，因此引用真实性对着包内副本校验，而条款序号仍以原始语料为准。",
+  "DOC-A.txt": "eval_cases/seeded_defects_v2/CG-V2-02.txt",
+  "DOC-B.txt": "eval_cases/seeded_defects_v2/CG-V2-05.txt",
+  "DOC-C.txt": "eval_cases/seeded_defects_v2/DI-V2-03.txt",
+  "DOC-D.txt": "eval_cases/seeded_defects_v2/DI-V2-06.txt"
+}

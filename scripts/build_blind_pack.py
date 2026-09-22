@@ -12,9 +12,11 @@ Three properties, each enforced in code:
   fixture filenames and every annotation sentence (``planted`` / ``missing``)
   are treated as banned strings and :func:`scan_leaks` greps the finished
   directory for them.
-- **The reviewed text is the fixture text**, minus marker lines. A single
-  documented difference, so citation genuineness can still be scored against
-  the copy the agent actually read.
+- **The reviewed text is the fixture text**, minus two documented lines: a
+  self-annotation marker, and the catalogue number the fixture carries in its
+  own body (it points at the answer key in this public repository). Nothing
+  else changes, so citation genuineness can still be scored against the copy
+  the agent actually read.
 - **The rubric is the engine's rubric.** The rules file carries the playbook's
   own stance instructions and each rule's guidance verbatim, and TASK.md
   restates the same output contract and absence rule the engine's prompt does.
@@ -106,6 +108,21 @@ def doc_name(index: int) -> str:
     return "DOC-" + "".join(reversed(letters)) + ".txt"
 
 
+def select_cases(cases: list[dict], only: str | None) -> list[dict]:
+    """Restrict a corpus to a comma-separated id list, keeping corpus order.
+
+    Order is what assigns DOC-A… names, so a subset must not be re-sorted.
+    """
+
+    if not only:
+        return cases
+    wanted = [item.strip() for item in only.split(",") if item.strip()]
+    unknown = sorted(set(wanted) - {str(case.get("id")) for case in cases})
+    if unknown:
+        raise ValueError(f"金标集里没有这些 case id：{'、'.join(unknown)}")
+    return [case for case in cases if str(case.get("id")) in wanted]
+
+
 def strip_markers(text: str) -> tuple[str, list[str]]:
     """Delete the self-annotation span, keeping the rest of the line intact.
 
@@ -126,6 +143,23 @@ def strip_markers(text: str) -> tuple[str, list[str]]:
             removed.append(line.strip())
         kept.append(cleaned)
     return "\n".join(kept).strip() + "\n", removed
+
+
+def strip_case_ids(text: str, case_id: str) -> tuple[str, list[str]]:
+    """Delete the catalogue number the fixture carries in its own body.
+
+    The corpus and its gold set live in a public repository, so a line reading
+    「文档编号：CG-V2-02」 is a pointer from the reviewed copy to the answer key.
+    The whole line goes; inventing a fake number would be a worse lie.
+    """
+
+    if not case_id:
+        return text, []
+    pattern = re.compile(rf"^.*{re.escape(case_id)}\s*$", re.MULTILINE)
+    removed = [match.group(0).strip() for match in pattern.finditer(text)]
+    if not removed:
+        return text, []
+    return re.sub(r"\n{3,}", "\n\n", pattern.sub("", text)).strip() + "\n", removed
 
 
 def export_rules_verbatim(playbook_id: str) -> str:
@@ -255,6 +289,8 @@ def export_pack(
         name = doc_name(index)
         original = Path(cases_root / case["document"]).read_text(encoding="utf-8")
         cleaned, dropped = strip_markers(original)
+        cleaned, id_lines = strip_case_ids(cleaned, str(case.get("id", "")))
+        dropped += id_lines
         (out_dir / "docs" / name).write_text(cleaned, encoding="utf-8")
         removed += [f"{name}: {line}" for line in dropped]
         mapping[name] = case["document"]
@@ -272,10 +308,19 @@ def main() -> int:
     parser.add_argument("--cases", type=Path, required=True, help="金标集 JSON")
     parser.add_argument("--out-dir", type=Path, required=True, help="盲测包目录（须在仓库外）")
     parser.add_argument("--map", type=Path, help="把「DOC-x → 原始语料」映射写到仓库内这个路径")
+    parser.add_argument(
+        "--only",
+        help="仅为这些 case id 建包（逗号分隔）；一套 24 份的语料超出单个评审会话能读完的量",
+    )
     parser.add_argument("--check-only", action="store_true", help="只扫描已有目录，不写文件")
     args = parser.parse_args()
 
     cases = json.loads(args.cases.read_text(encoding="utf-8"))["cases"]
+    try:
+        cases = select_cases(cases, args.only)
+    except ValueError as error:
+        print(f"[FAIL] {error}")
+        return 1
     if args.check_only:
         hits = scan_leaks(args.out_dir, banned=banned_strings(cases))
         for hit in hits:
@@ -297,8 +342,8 @@ def main() -> int:
         payload = {
             "_comment": (
                 "盲测包与原始语料的映射，仅供打分使用；不得放入包内。"
-                "正文与原始语料的唯一差异是剥掉了自标注行，"
-                "因此引用真实性必须对着包内副本校验。"
+                "正文与原始语料的差异只有两处：剥掉自标注行、剥掉正文里的文档编号行，"
+                "因此引用真实性对着包内副本校验，而条款序号仍以原始语料为准。"
             ),
             **{name: mapping[name] for name in sorted(mapping)},
         }
