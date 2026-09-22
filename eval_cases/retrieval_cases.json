@@ -3,20 +3,95 @@
   "document": "samples/供应商合同_样例A_条款完备.txt",
   "playbook_id": "contract-compliance",
   "cases": [
-    {"rule_name": "付款账期", "expected_ordinals": [2]},
-    {"rule_name": "定价清晰度", "expected_ordinals": [2]},
-    {"rule_name": "交付与验收条款", "expected_ordinals": [3]},
-    {"rule_name": "责任上限", "expected_ordinals": [4]},
-    {"rule_name": "终止条款", "expected_ordinals": [5]},
-    {"rule_name": "知识产权归属", "expected_ordinals": [6]},
-    {"rule_name": "数据保护义务", "expected_ordinals": [7]},
-    {"rule_name": "数据存储地", "expected_ordinals": [7]},
-    {"rule_name": "数据泄露通知", "expected_ordinals": [8]},
-    {"rule_name": "可用性承诺", "expected_ordinals": [9]},
-    {"rule_name": "响应时限", "expected_ordinals": [9]},
-    {"rule_name": "违约补偿条款", "expected_ordinals": [9]},
-    {"rule_name": "适用法律", "expected_ordinals": [10]},
-    {"rule_name": "审计权", "expected_ordinals": [11]},
-    {"rule_name": "分包披露", "expected_ordinals": [12]}
+    {
+      "rule_name": "付款账期",
+      "expected_ordinals": [
+        2
+      ]
+    },
+    {
+      "rule_name": "定价清晰度",
+      "expected_ordinals": [
+        2
+      ]
+    },
+    {
+      "rule_name": "交付与验收条款",
+      "expected_ordinals": [
+        2
+      ]
+    },
+    {
+      "rule_name": "责任上限",
+      "expected_ordinals": [
+        3
+      ]
+    },
+    {
+      "rule_name": "终止条款",
+      "expected_ordinals": [
+        3
+      ]
+    },
+    {
+      "rule_name": "知识产权归属",
+      "expected_ordinals": [
+        4
+      ]
+    },
+    {
+      "rule_name": "数据保护义务",
+      "expected_ordinals": [
+        4
+      ]
+    },
+    {
+      "rule_name": "数据存储地",
+      "expected_ordinals": [
+        4
+      ]
+    },
+    {
+      "rule_name": "数据泄露通知",
+      "expected_ordinals": [
+        5
+      ]
+    },
+    {
+      "rule_name": "可用性承诺",
+      "expected_ordinals": [
+        5
+      ]
+    },
+    {
+      "rule_name": "响应时限",
+      "expected_ordinals": [
+        5
+      ]
+    },
+    {
+      "rule_name": "违约补偿条款",
+      "expected_ordinals": [
+        5
+      ]
+    },
+    {
+      "rule_name": "适用法律",
+      "expected_ordinals": [
+        6
+      ]
+    },
+    {
+      "rule_name": "审计权",
+      "expected_ordinals": [
+        6
+      ]
+    },
+    {
+      "rule_name": "分包披露",
+      "expected_ordinals": [
+        7
+      ]
+    }
   ]
 }

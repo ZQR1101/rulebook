@@ -18,7 +18,7 @@ MIN_CLAUSE_CHARS = 2
 # Numbered clause starts: "## 标题", "第3条", "3.1", "一、", "(a)", "Article 5"
 _HEADING_RE = re.compile(
     r"""^\s*(
-        #{1,6}\s+\S
+        \#{1,6}\s+\S              # escaped: in re.VERBOSE a bare '#' comments out the rest
       | 第[一二三四五六七八九十百\d]+[条款章节部分]
       | \d+(\.\d+)*[\.、\)]?\s+\S
       | [(（]?[a-zA-Z\d][)）]\s+\S
@@ -29,6 +29,9 @@ _HEADING_RE = re.compile(
     re.VERBOSE,
 )
 _SLA_KEYWORDS = ("服务级别", "服务水平", "SLA", "uptime", "可用性", "响应时间")
+
+# Zero-width split after a terminator keeps the punctuation with its sentence.
+_SENTENCE_BOUNDARY = re.compile(r"(?<=[。；;！!？?\n])")
 
 
 @dataclass
@@ -141,6 +144,33 @@ def _is_sla_block(line: str) -> bool:
     return any(keyword in line for keyword in _SLA_KEYWORDS)
 
 
+def _chunk(text: str, limit: int = MAX_CLAUSE_CHARS) -> list[str]:
+    """Cut an oversized block into ≤limit pieces at sentence ends.
+
+    Truncating instead threw away everything past the limit: a document with no
+    numbered headings was scored on its first 2000 characters while the rest
+    vanished, so the engine could report 「文档未约定该项」 about text it never saw.
+    """
+
+    pieces: list[str] = []
+    current = ""
+    for sentence in _SENTENCE_BOUNDARY.split(text):
+        if not sentence:
+            continue
+        if len(current) + len(sentence) <= limit:
+            current += sentence
+            continue
+        if current.strip():
+            pieces.append(current.strip())
+        while len(sentence) > limit:  # one run-on sentence with no terminator
+            pieces.append(sentence[:limit].strip())
+            sentence = sentence[limit:]
+        current = sentence
+    if current.strip():
+        pieces.append(current.strip())
+    return pieces
+
+
 def split_clauses(text: str) -> list[ParsedClause]:
     """Split document text into clauses.
 
@@ -175,17 +205,18 @@ def split_clauses(text: str) -> list[ParsedClause]:
     buffer_heading: str | None = None
 
     def flush_buffer() -> None:
-        if buffer_text:
-            joined = "\n".join(buffer_text).strip()
-            if joined:
-                clauses.append(
-                    ParsedClause(
-                        ordinal=len(clauses) + 1,
-                        heading=buffer_heading,
-                        text=joined[:MAX_CLAUSE_CHARS],
-                    )
+        if not buffer_text:
+            return
+        joined = "\n".join(buffer_text).strip()
+        for index, chunk in enumerate(_chunk(joined)):
+            clauses.append(
+                ParsedClause(
+                    ordinal=len(clauses) + 1,
+                    heading=buffer_heading if index == 0 else None,
+                    text=chunk,
                 )
-            buffer_text.clear()
+            )
+        buffer_text.clear()
 
     for heading, block_lines in blocks:
         block_text = "\n".join(block_lines).strip()
@@ -194,22 +225,22 @@ def split_clauses(text: str) -> list[ParsedClause]:
         if heading is not None:
             flush_buffer()
             buffer_heading = heading
-            buffer_text.append(block_text[:MAX_CLAUSE_CHARS])
+            buffer_text.append(block_text)
             # A complete numbered block becomes its own clause immediately.
             flush_buffer()
             buffer_heading = None
         else:
-            buffer_text.append(block_text[:MAX_CLAUSE_CHARS])
+            buffer_text.append(block_text)
             if sum(len(t) for t in buffer_text) >= MAX_CLAUSE_CHARS // 2:
                 flush_buffer()
                 buffer_heading = None
     flush_buffer()
 
     if not clauses:
-        # Last resort: whole document as a single clause.
-        trimmed = text.strip()[:MAX_CLAUSE_CHARS]
-        if trimmed:
-            clauses.append(ParsedClause(ordinal=1, heading=None, text=trimmed))
+        # Last resort: the document has no structure at all, but it still must
+        # reach the scorer whole instead of in its first 2000 characters.
+        for chunk in _chunk(text.strip()):
+            clauses.append(ParsedClause(ordinal=len(clauses) + 1, heading=None, text=chunk))
     return clauses
 
 
