@@ -497,7 +497,7 @@ def main() -> int:
         replay_path = PROJECT_ROOT / "reports" / "seeded_corpus_replay.json"
         replay_path.parent.mkdir(parents=True, exist_ok=True)
         replay_path.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"[INFO] 明细写入 {replay_path}")
+        print(f"[INFO] 明细写入 {replay_path}（本地诊断件：含规则名与金标 ordinal，不要提交入库）")
 
     if errors:
         print("[FAIL] 预检未通过，语料未写入。")
