@@ -118,6 +118,51 @@ def get_clause_embedder() -> ClauseEmbedder | None:
         return None
 
 
+def rank_clauses(
+    clauses: list[ParsedClause],
+    rule_text: str,
+    *,
+    embedder: ClauseEmbedder | None = None,
+    mode: str = "hybrid",
+) -> list[ParsedClause]:
+    """Clauses carrying any signal for this rule, best first; ties keep document order.
+
+    Separate from :func:`select_clauses` because the ranking is what a candidate
+    cap has to act on: today the character budget is the only limit, and on a long
+    document it never binds, so every clause sharing one stray bigram reaches the
+    model and competes with the clause that actually answers the rule.
+
+    The floor is "any signal at all", deliberately not a tuned threshold: a cutoff
+    of 2 caught 9/10 labelled gaps but dropped 6 of the 34 gold retrieval cases,
+    because a clause matched by a single bigram is often the right clause. Lexical
+    score cannot tell "weak but correct" from "stray word".
+    """
+
+    keywords = _keywords(rule_text)
+    keyword_scores = {clause.ordinal: score_clause(clause.text, keywords) for clause in clauses}
+
+    semantic_scores: list[float] | None = None
+    if embedder is not None and mode in ("semantic", "hybrid"):
+        semantic_scores = embedder.semantic_scores(rule_text)
+
+    def combined_score(clause: ParsedClause) -> float:
+        keyword = float(keyword_scores[clause.ordinal])
+        if semantic_scores is None:
+            return keyword
+        max_keyword = max(keyword_scores.values()) or 1
+        keyword_norm = keyword / max_keyword
+        semantic_norm = (semantic_scores[clause.ordinal - 1] + 1) / 2  # cosine [-1,1] → [0,1]
+        if mode == "semantic":
+            return semantic_norm
+        return SEMANTIC_WEIGHT * semantic_norm + KEYWORD_WEIGHT * keyword_norm
+
+    ranked = sorted(
+        (clause for clause in clauses if combined_score(clause) > 0),
+        key=lambda clause: (-combined_score(clause), clause.ordinal),
+    )
+    return ranked
+
+
 def select_clauses(
     clauses: list[ParsedClause],
     rule_text: str,
@@ -149,36 +194,11 @@ def select_clauses(
         # for free and turn a retrieval choice into a false "文档缺失该项".
         return sorted(clauses, key=lambda clause: clause.ordinal)
 
-    keywords = _keywords(rule_text)
-    keyword_scores = {clause.ordinal: score_clause(clause.text, keywords) for clause in clauses}
-
-    semantic_scores: list[float] | None = None
-    if embedder is not None and mode in ("semantic", "hybrid"):
-        semantic_scores = embedder.semantic_scores(rule_text)
-
-    def combined_score(clause: ParsedClause) -> float:
-        keyword = float(keyword_scores[clause.ordinal])
-        if semantic_scores is None:
-            return keyword
-        max_keyword = max(keyword_scores.values()) or 1
-        keyword_norm = keyword / max_keyword
-        semantic_norm = (semantic_scores[clause.ordinal - 1] + 1) / 2  # cosine [-1,1] → [0,1]
-        if mode == "semantic":
-            return semantic_norm
-        return SEMANTIC_WEIGHT * semantic_norm + KEYWORD_WEIGHT * keyword_norm
-
-    # Floor is "any signal at all", deliberately not a tuned threshold: a cutoff
-    # of 2 caught 9/10 labelled gaps but dropped 6 of the 34 gold retrieval
-    # cases, because a clause matched by a single bigram is often the right
-    # clause. Lexical score cannot tell "weak but correct" from "stray word".
-    ranked = sorted(
-        (pair for pair in enumerate(clauses) if combined_score(pair[1]) > 0),
-        key=lambda pair: (-combined_score(pair[1]), pair[0]),
-    )
+    ranked = rank_clauses(clauses, rule_text, embedder=embedder, mode=mode)
 
     selected: list[ParsedClause] = []
     used = 0
-    for _, clause in ranked:
+    for clause in ranked:
         cost = len(clause.text)
         if selected and used + cost > char_budget:
             continue
@@ -198,7 +218,7 @@ def select_clauses(
             break
     if len(selected) < min_top:
         chosen_ordinals = {clause.ordinal for clause in selected}
-        for _, clause in ranked:
+        for clause in ranked:
             if clause.ordinal in chosen_ordinals:
                 continue
             selected.append(clause)

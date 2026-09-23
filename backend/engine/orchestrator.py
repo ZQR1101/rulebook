@@ -91,10 +91,13 @@ def run_review(document_id: str, *, trigger: str = "upload", custom_llm=None) ->
             raise
         document.status = "scoring"
         session.query(Clause).filter(Clause.document_id == document.id).delete()
+        clause_ids: dict[int, str] = {}
         for clause in parsed.clauses:
+            clause_id = str(uuid.uuid4())
+            clause_ids[clause.ordinal] = clause_id
             session.add(
                 Clause(
-                    id=str(uuid.uuid4()),
+                    id=clause_id,
                     document_id=document.id,
                     ordinal=clause.ordinal,
                     heading=clause.heading,
@@ -181,6 +184,7 @@ def run_review(document_id: str, *, trigger: str = "upload", custom_llm=None) ->
                     id=str(uuid.uuid4()),
                     document_id=document.id,
                     rule_id=row["rule_id"],
+                    clause_id=clause_ids.get(row["operative_clause"]),
                     rating=row["rating"],
                     initial_rating=row["rating"],
                     rationale=row["rationale"],

@@ -164,6 +164,8 @@ def score_case(
     exact_total = 0
     emitted = valid_emitted = 0
     unsupported_green = caught_green = 0
+    green_rows = green_operative = 0
+    defect_operative = defect_operative_on_gold = 0
     by_dimension: dict[str, dict[str, int]] = {}
 
     for row in rows:
@@ -188,6 +190,7 @@ def score_case(
         flagged = rating in FLAGGED
         exact = rating == expected
         gold_ordinals = set(retrieval_gold.get(name) or ())
+        operative = row.get("operative_ordinal")
         served = set((selections or {}).get(name) or [])
         blocked = measured and bool(gold_ordinals) and not served & gold_ordinals
         if blocked:
@@ -216,12 +219,21 @@ def score_case(
             "retrieval_blocked": blocked,
             "defect_groundable": groundable,
             "defect_grounded": grounded,
+            "operative_ordinal": operative,
+            "operative_on_gold": kind == "defect" and operative in gold_ordinals,
             "review_state": row.get("review_state"),
             "citations_stored": len(row.get("citations") or []),
             "citations_emitted": emit_count,
             "citations_invalid": max(emit_count - valid_count, 0),
         }
         details.append(outcome)
+
+        if rating == "green":
+            green_rows += 1
+            green_operative += int(operative is not None)
+        if kind == "defect" and operative is not None:
+            defect_operative += 1
+            defect_operative_on_gold += int(operative in gold_ordinals)
 
         if kind == "defect":
             counters["defect"][0] += int(flagged)
@@ -314,6 +326,11 @@ def score_case(
         "unsupported_green_total": unsupported_green,
         "unsupported_green_caught": caught_green,
         "gate_catch_rate": _ratio(caught_green, unsupported_green),
+        "green_rows": green_rows,
+        "green_operative_named": green_operative,
+        "operative_claim_rate": _ratio(green_operative, green_rows),
+        "defect_operative_named": defect_operative,
+        "defect_operative_on_gold": defect_operative_on_gold,
         "by_dimension": by_dimension,
         "details": details,
     }
@@ -399,6 +416,18 @@ def aggregate(results: list[dict]) -> dict:
         "citations_invalid": sum(r["metrics"]["citations_invalid"] for r in results),
         "unsupported_green_total": sum(r["metrics"]["unsupported_green_total"] for r in results),
         "unsupported_green_caught": sum(r["metrics"]["unsupported_green_caught"] for r in results),
+        # Stored baselines predate attribution, so an absent key is no claim rather
+        # than an error: re-aggregating an old run must still work.
+        "green_rows": sum(int(r["metrics"].get("green_rows") or 0) for r in results),
+        "green_operative_named": sum(
+            int(r["metrics"].get("green_operative_named") or 0) for r in results
+        ),
+        "defect_operative_named": sum(
+            int(r["metrics"].get("defect_operative_named") or 0) for r in results
+        ),
+        "defect_operative_on_gold": sum(
+            int(r["metrics"].get("defect_operative_on_gold") or 0) for r in results
+        ),
         "total_latency_ms": sum(r["latency_ms"] for r in results),
     }
     metrics["citation_genuineness"] = _ratio(
@@ -407,6 +436,12 @@ def aggregate(results: list[dict]) -> dict:
     )
     metrics["gate_catch_rate"] = _ratio(
         metrics["unsupported_green_caught"], metrics["unsupported_green_total"]
+    )
+    metrics["operative_claim_rate"] = _ratio(
+        metrics["green_operative_named"], metrics["green_rows"]
+    )
+    metrics["defect_operative_on_gold_rate"] = _ratio(
+        metrics["defect_operative_on_gold"], metrics["defect_operative_named"]
     )
     usage = [r.get("usage") or {} for r in results]
     cost_total = sum(float(item.get("estimated_cost_usd") or 0) for item in usage)
@@ -652,6 +687,8 @@ def _read_verdicts(document_id: str) -> tuple[list[dict], dict]:
     try:
         document = session.get(Document, document_id)
         rules = {r.id: r for r in session.query(Rule).filter_by(playbook_id=document.playbook_id).all()}
+        clauses = session.query(Clause).filter_by(document_id=document_id).all()
+        ordinal_by_clause_id = {clause.id: clause.ordinal for clause in clauses}
         rows = []
         for verdict in document.verdicts:
             rule = rules.get(verdict.rule_id)
@@ -664,12 +701,10 @@ def _read_verdicts(document_id: str) -> tuple[list[dict], dict]:
                     "gap_reason": verdict.gap_reason,
                     "review_state": verdict.review_state,
                     "citations": verdict.citations or [],
+                    "operative_ordinal": ordinal_by_clause_id.get(verdict.clause_id),
                 }
             )
-        clause_texts = {
-            clause.ordinal: clause.text
-            for clause in session.query(Clause).filter_by(document_id=document_id).all()
-        }
+        clause_texts = {clause.ordinal: clause.text for clause in clauses}
         return rows, {"scorecard": document.scorecard, "clause_texts": clause_texts}
     finally:
         session.close()
@@ -1081,6 +1116,12 @@ def render_markdown(
         f"| 引用门拦截率 | {_pct(overall['gate_catch_rate'])} | "
         f"{overall['unsupported_green_caught']}/{overall['unsupported_green_total']} "
         "| 无有效引用的绿色判定被降级为黄的比例 |",
+        f"| 绿色判定交出核心条款比例 | {_pct(overall['operative_claim_rate'])} | "
+        f"{overall['green_operative_named']}/{overall['green_rows']} "
+        "| operative_clause 非空的绿色判定（0 表示模型根本不认领条款，闸门无从校验） |",
+        f"| 缺陷判定的核心条款命中埋入段 | {_pct(overall['defect_operative_on_gold_rate'])} | "
+        f"{overall['defect_operative_on_gold']}/{overall['defect_operative_named']} "
+        "| 认领了条款的缺陷判定里，认领的那一段正是埋入缺陷的条款 |",
         f"| 时延 | {overall['total_latency_ms']} ms | {len(results)} 次文档评审 | 引擎端到端 |",
         "",
         *_noise_section(passes),

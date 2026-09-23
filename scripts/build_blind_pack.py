@@ -61,9 +61,15 @@ GENERIC_MARKERS = (
     "expected_rating",
 )
 
-# The engine's own output contract, restated for a human-shaped agent that has
-# no code path forcing it. Wording follows backend/engine/scoring.py::_build_prompt
-# so the two arms are held to the same rules.
+# The engine's rating/citation rules, restated for a human-shaped agent that
+# has no code path forcing them. Deliberately *not* a full copy of
+# backend/engine/scoring.py::_build_prompt: the engine also sees clause
+# ordinals and section labels, and is told that for a numeric SLA, amount or
+# deadline rule the clause answering it is the one making the promise, not the
+# one setting the remedy. That hint would name the planted decoys. So this arm
+# keeps the same document text, the same rules verbatim, and the same citation
+# burden — and any defect-axis gap between the arms is a retrieval-and-context
+# difference to be read as such, not a like-for-like model comparison.
 OUTPUT_CONTRACT = """```json
 {
   "rule": "付款账期",

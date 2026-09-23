@@ -244,6 +244,41 @@ def split_clauses(text: str) -> list[ParsedClause]:
     return clauses
 
 
+_SECTION_RE = re.compile(r"^第[一二三四五六七八九十百]+[部分章节编篇]")
+
+
+def _title_only(clause: ParsedClause) -> bool:
+    return bool(clause.heading) and clause.text.strip() == clause.heading.strip()
+
+
+def clause_identities(clauses: list[ParsedClause]) -> dict[int, tuple[str | None, str | None]]:
+    """Map ordinal → (title, section), the two facts that say what a clause *is*.
+
+    A heading and a numbered article's body can be split apart by design: the
+    splitter gives an isolated heading line its own clause, and every later
+    chunk of that article loses its heading. Sent to the model, the body then
+    reads as an unlabelled paragraph — the 99.95% deduction clause that beat
+    「尽力保证」 for 可用性承诺 arrived exactly that way. Recovering the neighbouring
+    title is annotation only: ordinals stay put, so stored verdicts and the
+    corpus gold keep pointing at the same text.
+    """
+
+    identities: dict[int, tuple[str | None, str | None]] = {}
+    section: str | None = None
+    orphan_title: str | None = None
+    for clause in clauses:
+        heading = (clause.heading or "").strip() or None
+        if heading and _SECTION_RE.match(heading):
+            section = heading
+        if _title_only(clause):
+            orphan_title = heading
+            identities[clause.ordinal] = (heading, section)
+            continue
+        identities[clause.ordinal] = (heading or orphan_title, section)
+        orphan_title = None
+    return identities
+
+
 def parse_document(path) -> ParsedDocument:
     path_obj = __import__("pathlib").Path(path)
     suffix = path_obj.suffix.lower()
