@@ -1062,6 +1062,14 @@ def render_markdown(
     retrieval_arm: str | None = None,
 ) -> str:
     overall = aggregate(results)
+    from backend.engine.retrieval import rule_context_budget
+
+    budget = rule_context_budget()
+    overall["char_budget"] = budget
+    overall["whole_document_cases"] = sum(
+        1 for result in results if (result.get("clause_chars") or 0) <= budget
+    )
+    overall["retrieval_mode"] = ", ".join(sorted({str(r["retrieval_mode"]) for r in results}))
     mode = {"all_red": "MechanicsFake · 全红", "green_hallucinated": "MechanicsFake · 幻觉绿色"}.get(
         fake or "", "真实 LLM"
     )
@@ -1228,6 +1236,11 @@ def render_markdown(
         "- 缺陷与缺口的判定标准来自剧本 guidance 的阈值原文，人工可复核；等级一致率低于召回率属正常"
         "（阈值边界处的红/黄偏移对签字流程影响有限）。",
         "- `--fake` 两种模式（全红 / 幻觉绿色）只验证指标计算与治理链路，不构成能力证据。",
+        f"- 本轮检索工作点：每条规则 {overall.get('char_budget', '—')} 字上限"
+        f"（`MAX_RULE_CONTEXT_CHARS`），其中 {overall.get('whole_document_cases', '—')} "
+        f"/{len(results)} 份文档正文短于上限、**整份送入不做任何挑选**；"
+        f"检索模式 {overall.get('retrieval_mode', '—')}。"
+        "上下文体量不同的两轮不可直接比较，读数前先核对这一行。",
         "- “预估”按 `TOKEN_PRICE_*` 环境变量计价；未配置时使用默认估价 "
         "（$0.20 输入 / $0.80 输出 每百万 token），只是量级参考而非账单金额。"
         "token 数优先取 API 返回值，缺失时按字符估算。`--model` 可覆盖评分模型，"

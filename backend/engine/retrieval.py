@@ -26,6 +26,24 @@ KEYWORD_WEIGHT = 0.4
 # CJK bigrams are roughly one token per character, so the old 24-token ceiling
 # would have truncated a rule's guidance before its distinctive tail.
 MAX_QUERY_KEYWORDS = 64
+
+
+def rule_context_budget() -> int:
+    """Characters of clause text one rule call may be shown.
+
+    Overridable because on the v2 corpus the budget is the whole retrieval
+    story: 20 of 90 planted defect clauses score exactly 0 against their own
+    rule's query, so no ordering *inside* the budget can reach them — the only
+    lever there is to send more of the document. A document that fits is
+    returned whole by :func:`select_clauses`, which is what a widened budget
+    turns every document into.
+    """
+
+    from backend.config import read_positive_int_env
+
+    return read_positive_int_env("MAX_RULE_CONTEXT_CHARS", MAX_RULE_CONTEXT_CHARS)
+
+
 _TOKEN_RE = re.compile("[A-Za-z]+|\\d+(?:\\.\\d+)+|[\\u4e00-\\u9fff]+")
 _CJK_RUN = re.compile("[\\u4e00-\\u9fff]+")
 
@@ -167,7 +185,7 @@ def select_clauses(
     clauses: list[ParsedClause],
     rule_text: str,
     *,
-    char_budget: int = MAX_RULE_CONTEXT_CHARS,
+    char_budget: int | None = None,
     min_top: int = MIN_TOP,
     embedder: ClauseEmbedder | None = None,
     mode: str = "hybrid",
@@ -184,9 +202,13 @@ def select_clauses(
     ``min_top`` instead handed it filler to cite, which made an honest
     "文档未约定该项" unreachable. ``min_top`` is a floor among candidates that
     do carry signal. A document that fits the budget entirely is returned whole —
-    nothing is scarce, so nothing is filtered.
+    nothing is scarce, so nothing is filtered. ``char_budget`` defaults to
+    :func:`rule_context_budget`, so an evaluation arm can widen it without a
+    code change.
     """
 
+    if char_budget is None:
+        char_budget = rule_context_budget()
     if clauses and sum(len(clause.text) for clause in clauses) <= char_budget:
         # Nothing has to be thrown away, so don't narrow anything: relevance
         # ranking only earns its keep when the budget is scarce. Dropping
