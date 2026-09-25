@@ -555,6 +555,36 @@ def test_a_middle_band_gap_is_recalled_at_amber_and_not_by_over_calling_red():
     assert amber["gap_red_without_reason"] == 0 and amber["gap_not_red_rules"] == []
 
 
+def test_unrecalled_gaps_are_split_by_the_direction_they_missed_in():
+    """A band dispute and a never-spotted absence cost the user different things.
+
+    缺口召回 91.1% → 83.9% read as "the engine stopped finding gaps"; it did not —
+    six of the nine losses were absences it found and graded too harshly.
+    """
+
+    amber_label = {"单点依赖": {"kind": "gap", "expected": "amber", "note": "全文未约定"}}
+    red_label = {"单点依赖": {"kind": "gap", "expected": "red", "note": "全文未约定"}}
+
+    over = score_case(amber_label, [_row("单点依赖", "red", gap_reason="无备份安排")])
+    under = score_case(red_label, [_row("单点依赖", "amber", gap_reason="仅缓解意向")])
+    missed = score_case(red_label, [_row("单点依赖", "green")])
+
+    assert (over["gap_over_band"], over["gap_under_band"], over["gap_missed_green"]) == (1, 0, 0)
+    assert (under["gap_over_band"], under["gap_under_band"], under["gap_missed_green"]) == (
+        0,
+        1,
+        0,
+    )
+    assert (missed["gap_over_band"], missed["gap_under_band"], missed["gap_missed_green"]) == (
+        0,
+        0,
+        1,
+    )
+    # Only the green verdict stopped reaching a human; the two band misses still do.
+    assert (over["gap_flagged"], under["gap_flagged"]) == (1.0, 1.0)
+    assert missed["gap_flagged"] == 0.0
+
+
 # ---------------------------------------------------------------- oracle retrieval
 
 

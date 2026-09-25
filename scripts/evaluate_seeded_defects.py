@@ -50,6 +50,7 @@ REPORT_PATH = PROJECT_ROOT / "reports" / "SEEDED_DEFECT_EVAL_REPORT.md"
 METRICS_PATH = PROJECT_ROOT / "reports" / "SEEDED_DEFECT_EVAL_METRICS.json"
 
 FLAGGED = ("red", "amber")
+_SEVERITY = {"green": 0, "amber": 1, "red": 2}
 _RULE_LINE_RE = re.compile(r"- 规则：(.+)")
 
 # Measured on one fixed corpus: three passes today returned 2, 5 and 6 false
@@ -161,6 +162,9 @@ def score_case(
     grounded_hits = groundable_total = 0
     gap_reason_missing: list[str] = []
     gap_not_red: list[str] = []
+    # 未达档的缺口分三个方向：判重（仍进人工队列）、判轻（仍标记）、完全漏检。
+    # 三者对使用者的代价完全不同，混在一个「缺口召回」里会读成同一种失败。
+    gap_band = {"over": 0, "under": 0, "missed": 0}
     exact_total = 0
     emitted = valid_emitted = 0
     unsupported_green = caught_green = 0
@@ -247,6 +251,13 @@ def score_case(
             counters["gap"][0] += int(gap_recalled)
             counters["gap"][1] += int(flagged)
             counters["gap"][2] += 1
+            if not gap_recalled:
+                if rating == "green":
+                    gap_band["missed"] += 1
+                elif _SEVERITY[rating] > _SEVERITY[expected]:
+                    gap_band["over"] += 1
+                else:
+                    gap_band["under"] += 1
             if expected == "red" and rating == "red" and not gap_recalled:
                 gap_reason_missing.append(name)
             elif expected == "red" and rating != "red":
@@ -308,6 +319,9 @@ def score_case(
         "gap_total": gap_total,
         "gap_recall": _ratio(gap_recalled_n, gap_total),
         "gap_flagged": _ratio(gap_flagged_n, gap_total),
+        "gap_over_band": gap_band["over"],
+        "gap_under_band": gap_band["under"],
+        "gap_missed_green": gap_band["missed"],
         "gap_red_without_reason": len(gap_reason_missing),
         "gap_red_without_reason_rules": gap_reason_missing,
         "gap_not_red_rules": gap_not_red,
@@ -405,6 +419,9 @@ def aggregate(results: list[dict]) -> dict:
         "gap_total": gap_total,
         "gap_recall": _ratio(gap_hit, gap_total),
         "gap_flagged": _ratio(gap_flagged_hit, gap_total),
+        "gap_over_band": sum(int(r["metrics"].get("gap_over_band") or 0) for r in results),
+        "gap_under_band": sum(int(r["metrics"].get("gap_under_band") or 0) for r in results),
+        "gap_missed_green": sum(int(r["metrics"].get("gap_missed_green") or 0) for r in results),
         "gap_red_without_reason": sum(
             int(r["metrics"].get("gap_red_without_reason") or 0) for r in results
         ),
@@ -1111,6 +1128,11 @@ def render_markdown(
         "| 红/黄等级与人工预期完全一致 |",
         f"| 缺口召回 | {_pct(overall['gap_recall'])} | {_counts(results, 'gap', lambda d: d['gap_recalled'])} "
         "| 整段缺失被正确判红且给出 gap_reason |",
+        f"| 缺口检出 | {_pct(overall['gap_flagged'])} | {_counts(results, 'gap', lambda d: d['flagged'])} "
+        "| 缺失处被判红/黄：进了人工队列，不论档位是否判准 |",
+        f"| └ 未达档：判重 {overall['gap_over_band']} · 判轻 {overall['gap_under_band']} "
+        f"· 完全漏检 {overall['gap_missed_green']} | — "
+        "| 判重只是档位争议（人工仍会看到）；只有「完全漏检」判成绿才是没发现缺口 |",
         f"| └ 判红但 gap_reason 为空 | {overall['gap_red_without_reason']} 条 | — "
         "| 缺口已发现、理由写在 rationale：口径损失，不是漏检 |",
         f"| 干净条款通过率 | {_pct(overall['clean_pass_rate'])} | {_counts(results, 'clean', lambda d: d['actual'] == 'green')} "

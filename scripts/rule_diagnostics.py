@@ -115,6 +115,58 @@ def print_diff(first: dict, last: dict, first_name: str, last_name: str) -> None
         print(f"  {kind:<7} {' · '.join(parts) or '无变化'}")
 
 
+def print_gap_audit(payloads: list[dict], arm_names: list[str]) -> None:
+    """Split gap losses into suspect labels vs contested bands — both need a human,
+    neither is fixed by prompt wording.
+
+    Arms unanimous *against* the annotated band points at the annotation: all-green
+    means the substance the band asks about is really in the document (a word-level
+    scrub removed the clause title, not the arrangement), while a shared off-band
+    rating means the expected severity was picked wrong. Arms disagreeing with each
+    other do have a gap; only its red/amber boundary is unsettled.
+    """
+
+    per_key: dict[tuple[str, str], dict[str, dict]] = {}
+    for name, payload in zip(arm_names, payloads):
+        for key, detail in rows_by_case(payload).items():
+            if detail["kind"] == "gap":
+                per_key.setdefault(key, {})[name] = detail
+
+    unanimous_off_band, contested, agreed = [], [], 0
+    for key, arms in sorted(per_key.items()):
+        if len(arms) < len(payloads):
+            continue
+        ratings = {detail["actual"] for detail in arms.values()}
+        expected = arms[arm_names[0]]["expected"]
+        if len(ratings) > 1:
+            contested.append((key, arms))
+        elif ratings == {expected}:
+            agreed += 1
+        else:
+            unanimous_off_band.append((key, arms, next(iter(ratings))))
+
+    total = sum(1 for arms in per_key.values() if len(arms) == len(payloads))
+    print(f"\n=== 缺口标注体检（{len(arm_names)} 臂并列，共 {total} 条各臂都跑到的缺口标注）")
+    print(
+        f"  一致且达标 {agreed} · 臂间档位分歧 {len(contested)} "
+        f"· 各臂一致但判在档外 {len(unanimous_off_band)}"
+    )
+    if unanimous_off_band:
+        print("  各臂一致但判在档外 —— 可疑的是标注本身，不是模型：")
+        for (case_id, rule), arms, rating in unanimous_off_band:
+            reference = arms[arm_names[0]]
+            hint = "缺口疑似从未埋入（实质安排仍在文中）" if rating == "green" else "期望档位待人工复核"
+            print(
+                f"    {case_id} · {rule}：期望 {reference['expected']}，"
+                f"{len(arms)} 臂一致判 {rating}｜{hint}｜标注「{reference.get('annotated') or '—'}」"
+            )
+    if contested:
+        print("  臂间档位分歧 —— 同一段文本在不同上下文窗口给出不同严重度（档位边界待裁定）：")
+        for (case_id, rule), arms in contested:
+            votes = "、".join(f"{name}={arms[name]['actual']}" for name in arm_names)
+            print(f"    {case_id} · {rule}：期望 {arms[arm_names[0]]['expected']}｜{votes}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("metrics", type=Path, nargs="+", help="评测 JSON（可多个臂并列）")
@@ -188,6 +240,8 @@ def main() -> int:
             args.metrics[0].stem,
             args.metrics[-1].stem,
         )
+    if len(payloads) >= 2:
+        print_gap_audit(payloads, [path.stem for path in args.metrics])
     return 0
 
 
