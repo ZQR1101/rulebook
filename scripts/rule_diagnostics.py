@@ -17,7 +17,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -64,16 +64,68 @@ def slice_by_rule(results: list[dict]) -> dict[str, dict]:
     return dict(out)
 
 
+def rows_by_case(payload: dict) -> dict[tuple[str, str], dict]:
+    """(case_id, rule) → the detail row, so two arms can be compared annotation by annotation."""
+
+    out = {}
+    for result in payload["results"]:
+        for detail in result["metrics"]["details"]:
+            out[(result["case_id"], detail["rule"])] = detail
+    return out
+
+
+def _row_score(detail: dict) -> int:
+    """How much of this annotation the verdict earned: band right, and for a
+    defect also grounded in the planted clause."""
+
+    score = int(bool(detail["exact"]))
+    if detail["kind"] == "defect":
+        score += int(bool(detail["defect_grounded"]))
+    return score
+
+
+def print_diff(first: dict, last: dict, first_name: str, last_name: str) -> None:
+    keys = sorted(set(first) & set(last))
+    print(f"\n=== 逐条差异：{first_name} → {last_name}（分母 {len(keys)} 条标注）")
+    tally: dict[tuple[str, str], int] = Counter()
+    for key in keys:
+        before, after = first[key], last[key]
+        if (
+            before["actual"] == after["actual"]
+            and before["defect_grounded"] == after["defect_grounded"]
+        ):
+            continue
+        delta = _row_score(after) - _row_score(before)
+        direction = "变好" if delta > 0 else "变差" if delta < 0 else "平移"
+        tally[(before["kind"], direction)] += 1
+        extra = (
+            f"｜锚定 {int(before['defect_grounded'])}→{int(after['defect_grounded'])}"
+            if before["kind"] == "defect"
+            else f"｜缺口达标 {int(before['gap_recalled'])}→{int(after['gap_recalled'])}"
+            if before["kind"] == "gap"
+            else ""
+        )
+        print(
+            f"  [{direction}] {key[0]} · {key[1]}（{before['kind']} 期望 {before['expected']}）："
+            f"{before['actual']} → {after['actual']}{extra}"
+        )
+    print("\n变化方向统计（按标注类型）：")
+    for kind in ("defect", "gap", "clean"):
+        parts = [f"{word} {tally[(kind, word)]}" for word in ("变好", "变差", "平移") if tally[(kind, word)]]
+        print(f"  {kind:<7} {' · '.join(parts) or '无变化'}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("metrics", type=Path, nargs="+", help="评测 JSON（可多个臂并列）")
     parser.add_argument("--top", type=int, default=15, help="只列锚定损失最大的前 N 条规则")
+    parser.add_argument(
+        "--diff", action="store_true", help="对比第一个与最后一个臂，逐条列出结果变化的标注"
+    )
     args = parser.parse_args()
 
-    arms = [
-        (path.stem, slice_by_rule(json.loads(path.read_text(encoding="utf-8"))["results"]))
-        for path in args.metrics
-    ]
+    payloads = [json.loads(path.read_text(encoding="utf-8")) for path in args.metrics]
+    arms = [(path.stem, slice_by_rule(payload["results"])) for path, payload in zip(args.metrics, payloads)]
     rules = sorted({rule for _, sliced in arms for rule in sliced})
     keyed = {name: sliced for name, sliced in arms}
 
@@ -92,7 +144,8 @@ def main() -> int:
     )
     header = f"{'规则':<16}"
     for name, _ in arms:
-        header += f"{name.split('_')[-1] + ' 锚定':>14}{'命中未锚定':>10}{'检索阻断':>10}"
+        short = name.removeprefix("v2_").replace("_relabeled", "")[:10]
+        header += f"{short + ' 锚定':>14}{'命中未锚定':>10}{'检索阻断':>10}"
     header += f"{'干净/误报':>12}{'缺口/召回':>12}"
     print(header)
     for rule in sorted(rules, key=anchored_gap, reverse=True)[: args.top]:
@@ -127,6 +180,13 @@ def main() -> int:
             f"  {name}: 锚定缺陷召回 {_pct(t['grounded'], t['groundable'])} ({t['grounded']}/{t['groundable']})"
             f" · 命中但未锚定 {t['ungrounded_hits']} · 误报 {t['clean_fp']}/{t['clean']}"
             f" · 缺口召回 {t['gap_recalled']}/{t['gap']}"
+        )
+    if args.diff and len(payloads) >= 2:
+        print_diff(
+            rows_by_case(payloads[0]),
+            rows_by_case(payloads[-1]),
+            args.metrics[0].stem,
+            args.metrics[-1].stem,
         )
     return 0
 
