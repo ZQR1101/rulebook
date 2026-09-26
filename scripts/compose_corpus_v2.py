@@ -337,7 +337,10 @@ def _plan(
 
     defect_wanted = rng.randint(*DEFECT_RANGE)
     defect_order = sorted(rules, key=lambda rule: (usage[rule]["defect"], rng.random()))
-    booked = set(defect_order[:defect_wanted])
+    # An ordered tuple, not a set: the colouring loop below draws from ``rng`` while
+    # it iterates, so hash-ordered membership would silently compose a different
+    # corpus in every process and no seed would be reproducible.
+    booked = tuple(defect_order[:defect_wanted])
     ratings = {rule: "green" for rule in rules}
     for rule in booked:
         # Both violated bands have to be exercised: guidance writes most rules as

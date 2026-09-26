@@ -9,8 +9,10 @@ honest. All of them are checked without a model call.
 from __future__ import annotations
 
 import json
+import os
 import random
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -132,6 +134,48 @@ def test_composition_is_reproducible():
     first, _ = composer.compose_all(SEED)
     second, _ = composer.compose_all(SEED)
     assert [builder.render_document(a) for a in first] == [builder.render_document(b) for b in second]
+
+
+# String hash order is fixed inside one process, so the test above cannot see a
+# plan that depends on it: the colouring loop used to iterate a *set* while drawing
+# from the rng, which meant PYTHONHASHSEED decided what the corpus looked like.
+_COMPOSE_SEVERAL = '''
+import hashlib, random, sys
+sys.path.insert(0, sys.argv[1])
+from scripts.build_seeded_corpus import render_document
+from scripts.compose_corpus_v2 import compose_document
+from scripts.corpus_v2_library import LIBRARIES
+
+usage = {
+    rule: {"gap": 0, "defect": 0, "red": 0, "amber": 0}
+    for library in LIBRARIES.values()
+    for rule in library
+}
+digest = hashlib.sha256()
+for playbook_id in LIBRARIES:
+    rng = random.Random(f"{sys.argv[2]}:{playbook_id}")
+    for index in range(3):
+        spec = compose_document(playbook_id, f"{playbook_id}-{index}", rng, usage)
+        digest.update(render_document(spec).encode("utf-8"))
+print(digest.hexdigest())
+'''
+
+
+def _digest_under_hash_seed(hash_seed: str) -> str:
+    env = {**os.environ, "PYTHONHASHSEED": hash_seed}
+    finished = subprocess.run(
+        [sys.executable, "-c", _COMPOSE_SEVERAL, str(PROJECT_ROOT), str(SEED)],
+        capture_output=True,
+        check=True,
+        env=env,
+        text=True,
+    )
+    return finished.stdout.strip()
+
+
+def test_composition_survives_a_different_string_hash_order():
+    digests = {_digest_under_hash_seed(seed) for seed in ("0", "999")}
+    assert len(digests) == 1, f"同一个 seed 在不同 PYTHONHASHSEED 下组出不同语料：{digests}"
 
 
 def test_manifest_round_trips_through_the_loader(manifest, tmp_path):

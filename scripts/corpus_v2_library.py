@@ -614,6 +614,13 @@ PART_TITLES = {
 # A gap must be provably empty, not merely unlabelled. These are the terms that
 # would make a "文档未约定该事项" verdict contestable, so the composer refuses to
 # mark a rule as a gap while any other clause in the same document carries one.
+# Two entries carry a *phrase* rather than a word, because the paid arms quoted a
+# sentence that answered the rule while naming none of its words: 「按附件二所列 N
+# 个功能点逐项核对，通过比例不低于 95%」 defines delivery scope (DI-V2-02, all three
+# arms judged that gap green), and 「任何修改须经双方授权代表签署书面补充文件后方生效」
+# is a change-control arrangement (DI-V2-05, the whole-document arm quoted it).
+# Bare 功能点 or 修改 would also collide with 用例覆盖功能点 and 合同文本修改处加骑缝章,
+# which answer nothing — the rule would quietly retire from gap duty.
 GAP_SIGNATURES: dict[str, tuple[str, ...]] = {
     "付款账期": ("支付", "付款", "账期", "垫付", "计息"),
     "定价清晰度": ("总价", "报价", "费率", "计价", "费用构成"),
@@ -630,7 +637,7 @@ GAP_SIGNATURES: dict[str, tuple[str, ...]] = {
     "适用法律": ("法律", "仲裁", "管辖", "法院", "诉讼"),
     "审计权": ("核查", "检查", "审计", "认证"),
     "分包披露": ("分包", "转包", "承接方", "协作单位"),
-    "需求范围明确": ("工作内容为", "工作内容以", "范围", "边界"),
+    "需求范围明确": ("工作内容为", "工作内容以", "范围", "边界", "功能点逐项核对"),
     "验收标准": ("核对", "确认单", "通过比例", "评审", "视为认可"),
     "关键角色与联系人": ("项目经理", "对接", "决策", "联系人", "答复人"),
     "时间与里程碑": ("工期", "进度", "节点", "完成于", "日历天"),
