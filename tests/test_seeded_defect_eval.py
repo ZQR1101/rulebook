@@ -676,6 +676,24 @@ def test_limitations_admit_retrieval_only_when_the_corpus_outgrows_the_budget(of
     assert "不混入检索召回因素" not in report
 
 
+def test_a_rendered_report_describes_the_budget_its_verdicts_collected_at(offline_env):
+    """A pooled report inherits the pooler's environment, which is not the run's working point."""
+
+    long_like = dict(run_case(CASE_BY_ID["CG-SEED-02"], fake="all_red"), clause_chars=9000)
+
+    widened = render_markdown([long_like], fake="all_red", clause_budget=12000)
+    assert "每条规则 12000 字上限" in widened
+    assert "1 /1 份文档正文短于上限" in widened
+    # "不混入检索召回因素" contains the confession as a substring, so match the whole sentence.
+    assert "本评测因此混入检索召回因素" not in widened
+    assert "不混入检索召回因素" in widened, "9000 字文档在 12000 预算下整份送入，检索不构成变量"
+
+    unknown = render_markdown([long_like], fake="all_red", clause_budget=None)
+    assert "条款预算**未记录**" in unknown
+    assert "字上限" not in unknown
+    assert "混入检索召回因素" not in unknown, "预算未知时既不能承认、也不能否认检索混入"
+
+
 # ------------------------------------------------------------- retrieval blocking
 
 

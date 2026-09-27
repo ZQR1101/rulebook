@@ -72,13 +72,14 @@ def test_arms_that_differ_only_by_clause_budget_are_not_one_measurement():
     assert pool._conflict([shipping, _payload([])]) is None
 
 
-def _run_pool(inputs: list[Path], tmp_path: Path, monkeypatch) -> int:
+def _run_pool(inputs: list[Path], tmp_path: Path, monkeypatch, extra: tuple = ()) -> int:
     monkeypatch.setattr(
         sys,
         "argv",
         [
             "pool_run_parts.py",
             *(str(path) for path in inputs),
+            *extra,
             "--metrics-out",
             str(tmp_path / "pooled.json"),
             "--report-out",
@@ -162,3 +163,26 @@ def test_a_part_without_a_recorded_budget_pools_but_does_not_certify(tmp_path, m
     out = capsys.readouterr().out
     assert "1/2 份运行未记录条款预算" in out
     assert "条款预算同为" not in out
+
+
+def test_an_operator_verified_budget_is_recorded_as_verified(tmp_path, monkeypatch):
+    """The paid whole-document parts predate the field, but each part's own report states 12000."""
+
+    legacy = _labelled_copy(tmp_path, "legacy.json", None)
+
+    assert _run_pool([legacy], tmp_path, monkeypatch, extra=["--clause-budget", "12000"]) == 0
+
+    pooled = json.loads((tmp_path / "pooled.json").read_text(encoding="utf-8"))
+    assert pooled["clause_budget_chars"] == 12000
+    assert "人工核对" in pooled["clause_budget_source"]
+    report = (tmp_path / "pooled.md").read_text(encoding="utf-8")
+    assert "由人工核对各轮报告后填入" in report
+    assert "每条规则 12000 字上限" in report
+
+
+def test_a_supplied_budget_contradicting_a_run_is_refused(tmp_path, monkeypatch, capsys):
+    labelled = _labelled_copy(tmp_path, "labelled.json", 6000)
+
+    assert _run_pool([labelled], tmp_path, monkeypatch, extra=["--clause-budget", "12000"]) == 1
+    assert "矛盾" in capsys.readouterr().err
+    assert not (tmp_path / "pooled.json").exists()

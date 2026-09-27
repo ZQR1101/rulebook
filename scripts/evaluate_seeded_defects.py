@@ -60,6 +60,9 @@ _RULE_LINE_RE = re.compile(r"- 规则：(.+)")
 # actually see; pass --temperature 0 for a reproducible greedy comparison.
 EVAL_TEMPERATURE = 0.7
 
+# Distinguishes "the caller did not say" from "the caller says it is unrecorded".
+_BUDGET_FROM_ENV = object()
+
 
 # --------------------------------------------------------------------------- gold
 
@@ -1077,14 +1080,28 @@ def render_markdown(
     failed: list[str] | None = None,
     passes: list[list[dict]] | None = None,
     retrieval_arm: str | None = None,
+    clause_budget: int | None | object = _BUDGET_FROM_ENV,
 ) -> str:
+    """Render a report.
+
+    ``clause_budget`` is the characters-per-rule budget these verdicts were
+    collected at. The eval run leaves it alone — it *is* that budget — but a
+    caller re-rendering stored verdicts later (the run-parts pooler) inherits an
+    unrelated environment, and guessing here would mislabel the whole-document
+    arm as a 6000-char run. Pass ``None`` when it genuinely is not recorded.
+    """
+
     overall = aggregate(results)
     from backend.engine.retrieval import rule_context_budget
 
-    budget = rule_context_budget()
+    budget = (
+        rule_context_budget() if clause_budget is _BUDGET_FROM_ENV else clause_budget
+    )
     overall["char_budget"] = budget
-    overall["whole_document_cases"] = sum(
-        1 for result in results if (result.get("clause_chars") or 0) <= budget
+    overall["whole_document_cases"] = (
+        None
+        if budget is None
+        else sum(1 for result in results if (result.get("clause_chars") or 0) <= budget)
     )
     overall["retrieval_mode"] = ", ".join(sorted({str(r["retrieval_mode"]) for r in results}))
     mode = {"all_red": "MechanicsFake · 全红", "green_hallucinated": "MechanicsFake · 幻觉绿色"}.get(
@@ -1235,19 +1252,37 @@ def render_markdown(
             )
         lines.append("")
 
-    budget = 6000
-    oversized = [result["case_id"] for result in results if (result.get("clause_chars") or 0) > budget]
-    if oversized:
+    if budget is None:
         corpus_note = (
-            f"- {len(oversized)}/{len(results)} 份文档的条款正文超过检索预算（{budget} 字符），"
-            f"本评测因此混入检索召回因素：{', '.join(oversized)}。"
-            "判定上限见 `--retrieval oracle` 臂，检索质量本身另见 `scripts/evaluate_retrieval.py`。"
+            "- 本报告由多次运行拼合，且这些运行未能全部记录条款预算，因此**无法断言文档是否整份送入**；"
+            "读数前先核对各份运行自己的报告。"
+        )
+        working_point = (
+            "- 本轮检索工作点：条款预算**未记录**（拼合自多次运行），无法核对是否整份送入；"
+            "上下文体量不同的两轮不可直接比较，读数前先向各份运行的报告核对。"
         )
     else:
-        corpus_note = (
-            f"- 金标集为合成文档：每份的条款正文都短于条款检索预算（{budget} 字符），"
-            "因此本评测衡量的是**评分与引用治理**，不混入检索召回因素；"
-            "检索质量的评测见 `scripts/evaluate_retrieval.py`。"
+        oversized = [
+            result["case_id"] for result in results if (result.get("clause_chars") or 0) > budget
+        ]
+        if oversized:
+            corpus_note = (
+                f"- {len(oversized)}/{len(results)} 份文档的条款正文超过检索预算（{budget} 字符），"
+                f"本评测因此混入检索召回因素：{', '.join(oversized)}。"
+                "判定上限见 `--retrieval oracle` 臂，检索质量本身另见 `scripts/evaluate_retrieval.py`。"
+            )
+        else:
+            corpus_note = (
+                f"- 金标集为合成文档：每份的条款正文都短于条款检索预算（{budget} 字符），"
+                "因此本评测衡量的是**评分与引用治理**，不混入检索召回因素；"
+                "检索质量的评测见 `scripts/evaluate_retrieval.py`。"
+            )
+        working_point = (
+            f"- 本轮检索工作点：每条规则 {budget} 字上限"
+            f"（`MAX_RULE_CONTEXT_CHARS`），其中 {overall['whole_document_cases']} "
+            f"/{len(results)} 份文档正文短于上限、**整份送入不做任何挑选**；"
+            f"检索模式 {overall.get('retrieval_mode', '—')}。"
+            "上下文体量不同的两轮不可直接比较，读数前先核对这一行。"
         )
     lines += [
         "## 说明与局限",
@@ -1258,11 +1293,7 @@ def render_markdown(
         "- 缺陷与缺口的判定标准来自剧本 guidance 的阈值原文，人工可复核；等级一致率低于召回率属正常"
         "（阈值边界处的红/黄偏移对签字流程影响有限）。",
         "- `--fake` 两种模式（全红 / 幻觉绿色）只验证指标计算与治理链路，不构成能力证据。",
-        f"- 本轮检索工作点：每条规则 {overall.get('char_budget', '—')} 字上限"
-        f"（`MAX_RULE_CONTEXT_CHARS`），其中 {overall.get('whole_document_cases', '—')} "
-        f"/{len(results)} 份文档正文短于上限、**整份送入不做任何挑选**；"
-        f"检索模式 {overall.get('retrieval_mode', '—')}。"
-        "上下文体量不同的两轮不可直接比较，读数前先核对这一行。",
+        working_point,
         "- “预估”按 `TOKEN_PRICE_*` 环境变量计价；未配置时使用默认估价 "
         "（$0.20 输入 / $0.80 输出 每百万 token），只是量级参考而非账单金额。"
         "token 数优先取 API 返回值，缺失时按字符估算。`--model` 可覆盖评分模型，"
