@@ -133,9 +133,22 @@ rulebook mail --playbook contract-compliance
 ## ✅ 测试
 
 ```bash
-pytest   # 482 tests：认证/种子数据、引擎三路径（happy/duplicate/failure）、治理、邮件、检索模式、规则建议、
-         # 治理（非法迁移/终稿门/幂等）、收件箱、既有 RAG/工具安全回归
+pytest   # 697 tests：认证/种子数据、引擎三路径（happy/duplicate/failure）、治理、邮件、检索模式、规则建议、
+         # 治理（非法迁移/终稿门/幂等）、收件箱、评测语料与打分器、既有 RAG/工具安全回归
 ```
+
+## 🧪 评测语料（全部为合成文本）
+
+平台的评分能力用一套**程序生成**的金标语料衡量，而不是任何真实客户文档：
+
+| | v1 | v2 |
+|---|---|---|
+| 规模 | 4 份短文 × 全部规则在手 | 24 份长文（16 合同 + 8 交付件）× 平均 1 万字 |
+| 标注 | 埋入缺陷 + 缺口 + 合规行 | 336 条：90 个埋入缺陷 / 56 个缺口 / 190 条合规 |
+| 生成 | `scripts/build_seeded_corpus.py` | `scripts/compose_corpus_v2.py`（`--seed` 可复现，`--check` 只组卷不写盘） |
+| 打分 | `scripts/evaluate_seeded_defects.py` | 同一套打分器；`--retrieval oracle` 给出判定上限 |
+
+**这些文件里的公司与人名、金额、日期、编号都取自生成名单，不指向任何真实主体，也不反映任何真实约定。**文中刻意埋入的缺陷（责任无限、付款以上级批复为前提、泄露通报超期……）与「文档未约定」的缺口都是评测标注；缺陷位置与预期档位在 `eval_cases/seeded_defect_cases_v2.json`，`eval_cases/corpus_v2_manifest.json` 的 `synthetic` 字段随语料一起声明这一点。因此把某份 `.txt` 单独摘出来看，它读起来像真合同——它是考卷，不是证据。
 
 ## ⚠️ 当前限制（v1.1）
 

@@ -107,6 +107,16 @@ CHOICES: dict[str, tuple[float, ...]] = {
     "late_pct": (0.03, 0.05, 0.08),
 }
 
+# Disclaimers that must travel with the corpus: a reader who opens one .txt sees a
+# plausible procurement contract, and the party names come off a generated pool that
+# can collide with real firms. The planted violations are measurement fixtures.
+SYNTHETIC_NOTE = (
+    "本语料由 scripts/compose_corpus_v2.py 从条款模板库程序生成，全部为评测用虚构文本："
+    "公司名、人名、金额、日期与文档编号取自生成名单，不指向任何真实主体，也不反映其任何约定；"
+    "文中刻意埋入的缺陷（如责任无限、付款以上级批复为前提、泄露通报超期）与「文档未约定」的缺口"
+    "都是评测标注。缺陷位置与预期档位的金标答案见 eval_cases/seeded_defect_cases_v2.json。"
+)
+
 PARTY_A = (
     "华宁轨道交通集团有限公司", "江州医药控股集团有限责任公司", "临海港口物流股份有限公司",
     "晟元电力科学研究院", "广衡建设发展集团有限公司", "川原食品股份有限公司",
@@ -703,6 +713,7 @@ def main() -> int:
         return 0
 
     manifest = {
+        "synthetic": SYNTHETIC_NOTE,
         "defaults": {
             "playbook_id": "contract-compliance",
             "min_chars": DEFAULT_MIN_CHARS,
