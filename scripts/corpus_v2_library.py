@@ -614,13 +614,15 @@ PART_TITLES = {
 # A gap must be provably empty, not merely unlabelled. These are the terms that
 # would make a "文档未约定该事项" verdict contestable, so the composer refuses to
 # mark a rule as a gap while any other clause in the same document carries one.
-# Two entries carry a *phrase* rather than a word, because the paid arms quoted a
-# sentence that answered the rule while naming none of its words: 「按附件二所列 N
-# 个功能点逐项核对，通过比例不低于 95%」 defines delivery scope (DI-V2-02, all three
-# arms judged that gap green), and 「任何修改须经双方授权代表签署书面补充文件后方生效」
-# is a change-control arrangement (DI-V2-05, the whole-document arm quoted it).
-# Bare 功能点 or 修改 would also collide with 用例覆盖功能点 and 合同文本修改处加骑缝章,
-# which answer nothing — the rule would quietly retire from gap duty.
+# 需求范围明确 carries a *phrase* (功能点逐项核对) rather than a word, because all three
+# paid arms quoted 「按附件二所列 N 个功能点逐项核对，通过比例不低于 95%」 as a delivery
+# scope definition while naming none of the rule's words (DI-V2-02). Bare 功能点 would
+# also collide with clauses that answer nothing.
+# A rule whose words appear in every document simply never becomes a gap — that is how
+# 范围蔓延风险 stopped leaking the change-control boilerplate 「任何修改须经双方授权代表签署
+# 书面补充文件后方生效」, which its own 调整/变更/配合 words already cover. `--check` lists
+# the rules that have retired from gap duty (9/27); both retired rules had been a gap
+# exactly once in the old corpus, and that occurrence was the leak in each case.
 GAP_SIGNATURES: dict[str, tuple[str, ...]] = {
     "付款账期": ("支付", "付款", "账期", "垫付", "计息"),
     "定价清晰度": ("总价", "报价", "费率", "计价", "费用构成"),
