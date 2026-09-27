@@ -317,3 +317,34 @@ def test_a_self_cancelling_band_keeps_its_label_until_the_text_moves(derived):
         assert stacked.search(text), (
             f"{case['id']} 的付款账期仍标 amber，但正文里的叠算句已不在：改模板必须同时重述标签"
         )
+
+
+# 「专职人员 N 名（开发 N 名、测试与实施各一名）」把同一个数既当总数又当分项 ⇒ 分项和 ≠ 总数。
+# 三臂在用到它的全部 5 份交付件上一致判非绿，各臂误报（keyword 9／整份 9／oracle 7）都占 5 条，
+# 且与检索无关（oracle 臂 5/5 全中）——本轮误报的最大单一来源。
+TOTAL_RESTATED_AS_PART = {("不切实际的承诺", "green")}
+TOTAL_VS_PART = re.compile(r"\{(\w+)\}[^（）\n]*（[^（）]*\{\1\}")
+
+
+def test_no_template_states_a_total_its_own_breakdown_contradicts(derived):
+    """配额自相矛盾的模板要么没有，要么登记在案；登记的这条在模板与标签一起改前留在原地。"""
+
+    found = set()
+    for library in composer.LIBRARIES.values():
+        for rule, variants in library.items():
+            for band, template in variants.items():
+                if any(TOTAL_VS_PART.search(sentence) for sentence in template.sentences):
+                    found.add((rule, band))
+    assert found == TOTAL_RESTATED_AS_PART, (
+        f"配额自相矛盾的模板清单变了：新增 {sorted(found - TOTAL_RESTATED_AS_PART)}，"
+        f"已消除 {sorted(TOTAL_RESTATED_AS_PART - found)}"
+    )
+
+    cases, documents = derived
+    rendered = re.compile(r"专职人员 \d+ 名（开发 \d+ 名")
+    affected = [case for case in cases if rendered.search(documents[case["id"]][1])]
+    assert len(affected) == 5, f"这条模板的覆盖面从 5 份变成 {len(affected)} 份，误报归因要重算"
+    for case in affected:
+        assert "不切实际的承诺" in case["clean"], (
+            f"{case['id']} 的正文仍写着自相矛盾的配额，但它已不在合规行里：改模板须同时重述标签"
+        )
