@@ -272,3 +272,48 @@ def test_a_compliant_clause_never_cancels_its_own_limit():
         for rule, variants in library.items():
             green = "\n".join(variants["green"].sentences)
             assert not unlimited.search(green), f"{playbook_id}/{rule} 的绿色条款自我取消了限额：{green}"
+
+
+# 知情未修：付款账期 amber「81 日内…顺延合计不超过 81 日」把同一个带档位的槽位叠了两次，
+# 最长 162 日而 guidance 写「超过 90 天为红」⇒ 该档位在数学上不可达。keyword／整份直送／
+# oracle 三臂在 CG-V2-05、CG-V2-11 上都照字面判红，理由里写出了这条算式。
+BAND_DOUBLED_SLOTS = {("付款账期", "amber")}
+
+
+def banded_slot_doublings() -> set[tuple[str, str]]:
+    """(rule, band) pairs whose variant stacks a slot that carries a declared band range."""
+
+    doubled = set()
+    for library in composer.LIBRARIES.values():
+        for rule, variants in library.items():
+            for band, template in variants.items():
+                text = " ".join(template.sentences)
+                for slot in composer.BANDS.get((rule, band), {}):
+                    if text.count("{" + slot + "}") > 1:
+                        doubled.add((rule, band))
+    return doubled
+
+
+def test_a_banded_slot_is_not_stacked_without_being_accounted_for():
+    """自我抵消的档位模板要么不存在，要么必须登记在案，不许悄悄多出一条。"""
+
+    doubled = banded_slot_doublings()
+    assert doubled == BAND_DOUBLED_SLOTS, (
+        f"档位模板的自我抵消清单变了：新增 {sorted(doubled - BAND_DOUBLED_SLOTS)}，"
+        f"已消除 {sorted(BAND_DOUBLED_SLOTS - doubled)}"
+    )
+
+
+def test_a_self_cancelling_band_keeps_its_label_until_the_text_moves(derived):
+    """文本没改就不许单独把标签改成红——那是把语料缺陷洗成模型失误。"""
+
+    cases, documents = derived
+    stacked = re.compile(r"顺延合计不超过 \{?\d+\}? 日")
+    for case in cases:
+        row = next((d for d in case["defects"] if d["rule"] == "付款账期"), None)
+        if row is None or row["expected_rating"] != "amber":
+            continue
+        text = documents[case["id"]][1]
+        assert stacked.search(text), (
+            f"{case['id']} 的付款账期仍标 amber，但正文里的叠算句已不在：改模板必须同时重述标签"
+        )
