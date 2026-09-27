@@ -240,8 +240,31 @@ GAP_NOTES = {
     "保密与知识产权": "全文未约定资料保护与成果权属",
 }
 
+# ``ABSENCE_BAND`` is a per-rule default, and the shipped corpus broke it in both
+# directions. Adjudicated 2026-09-27 against two complete paid arms that agreed on
+# every one of these rows, each resolved by quoting the rule's own guidance and
+# reading the document:
+#   CG-V2-02 交付与验收条款 — guidance puts 红 at 「无交付或验收条款」, but this document
+#     arranges 应形成的资料清单（名称、份数与提交方式以附表为准）and a 上线后运行观察期, so
+#     only the acceptance standard is missing = 黄.
+#   DI-V2-01 单点依赖 — the other four delivery docs carry 「人员变动应提前书面告知」, which
+#     is mitigation intent ⇒ 黄; this one carries only account revocation, and names
+#     谢岚 as the single person转达需求/收集反馈/安排会议 with no backup anywhere ⇒ the
+#     guidance 红 branch, 「单点依赖且无缓解」, verbatim.
+#   DI-V2-03 / DI-V2-06 数据处理合规 — 「进场前完成登记，并提交身份证件与联系方式清单」 puts
+#     sensitive personal data in scope (身份证件号码 is sensitive by statute) with no
+#     authorization ⇒ 红. GAP_SIGNATURES lists 证件号码, so the word gate passed on the
+#     synonym; that is a generation-side hole to close separately, not a reason to
+#     keep a band the guidance does not support.
+GAP_BAND_OVERRIDES: dict[tuple[str, str], str] = {
+    ("CG-V2-02", "交付与验收条款"): "amber",
+    ("DI-V2-01", "单点依赖"): "red",
+    ("DI-V2-03", "数据处理合规"): "red",
+    ("DI-V2-06", "数据处理合规"): "red",
+}
 
-def _gap_note(rule: str) -> dict[str, str]:
+
+def _gap_note(doc_id: str, rule: str) -> dict[str, str]:
     """One gap annotation: what is absent, and what verdict absence actually earns.
 
     The scorer used to grade every gap red by construction. This is where a rule
@@ -250,7 +273,9 @@ def _gap_note(rule: str) -> dict[str, str]:
     """
 
     note = {"missing": GAP_NOTES[rule]}
-    band = "green" if rule in ABSENCE_NOT_GRADED else ABSENCE_BAND.get(rule)
+    band = GAP_BAND_OVERRIDES.get((doc_id, rule))
+    if band is None:
+        band = "green" if rule in ABSENCE_NOT_GRADED else ABSENCE_BAND.get(rule)
     if band:
         note["expected_rating"] = band
     return note
@@ -458,6 +483,10 @@ def _assemble(
         answered[halfway:] + mechanics,
         general,
     ]
+    # A mistyped key would otherwise sit there doing nothing forever.
+    dead = {rule for doc, rule in GAP_BAND_OVERRIDES if doc == doc_id} - set(gaps)
+    if dead:
+        raise ValueError(f"{doc_id}：档位覆盖落在未作为缺口的规则上：{sorted(dead)}")
     return DocumentSpec(
         id=doc_id,
         title=_title(playbook_id, slots),
@@ -465,7 +494,7 @@ def _assemble(
         parts=parts,
         part_titles=PART_TITLES[playbook_id],
         preamble=_preamble(playbook_id, doc_id, slots),
-        gap_notes={rule: _gap_note(rule) for rule in gaps},
+        gap_notes={rule: _gap_note(doc_id, rule) for rule in gaps},
     )
 
 

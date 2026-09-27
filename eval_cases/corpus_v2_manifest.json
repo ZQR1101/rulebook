@@ -613,7 +613,8 @@
           "missing": "全文未约定故障响应与处理时限"
         },
         "交付与验收条款": {
-          "missing": "全文未约定交付内容、时间与验收流程"
+          "missing": "全文未约定交付内容、时间与验收流程",
+          "expected_rating": "amber"
         }
       },
       "parts": [
@@ -9234,7 +9235,7 @@
       "gap_notes": {
         "单点依赖": {
           "missing": "全文未涉及关键人员、组件的冗余安排",
-          "expected_rating": "amber"
+          "expected_rating": "red"
         },
         "责任与赔偿": {
           "missing": "全文未约定违约责任与赔偿安排"
@@ -10346,7 +10347,7 @@
       "gap_notes": {
         "数据处理合规": {
           "missing": "全文未涉及数据提供与使用授权",
-          "expected_rating": "amber"
+          "expected_rating": "red"
         },
         "单点依赖": {
           "missing": "全文未涉及关键人员、组件的冗余安排",
@@ -12037,7 +12038,7 @@
       "gap_notes": {
         "数据处理合规": {
           "missing": "全文未涉及数据提供与使用授权",
-          "expected_rating": "amber"
+          "expected_rating": "red"
         },
         "保密与知识产权": {
           "missing": "全文未约定资料保护与成果权属"

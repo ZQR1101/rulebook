@@ -235,10 +235,33 @@ def test_every_gap_declares_the_band_its_absence_actually_earns(derived):
     for case in cases:
         for gap in case["gaps"]:
             seen.add(gap["rule"])
-            assert gap["expected_rating"] == composer.ABSENCE_BAND.get(gap["rule"], "red"), (
+            declared = composer.GAP_BAND_OVERRIDES.get(
+                (case["id"], gap["rule"]), composer.ABSENCE_BAND.get(gap["rule"], "red")
+            )
+            assert gap["expected_rating"] == declared, (
                 f"{case['id']} 的缺口「{gap['rule']}」档位与声明不符：{gap}"
             )
     assert seen & set(composer.ABSENCE_BAND), "整套语料里没有任何黄档缺口，这条口径没被考到"
+
+
+def test_band_overrides_are_the_only_way_to_leave_the_per_rule_default(derived):
+    """按文档改档位是裁定，不是调参：偏离默认的缺口行必须逐条记在覆盖表里。"""
+
+    cases, _ = derived
+    for (doc, rule), band in composer.GAP_BAND_OVERRIDES.items():
+        assert band in ("red", "amber"), f"{doc}·{rule} 的覆盖档位非法：{band}"
+        gaps = {gap["rule"] for gap in next(c for c in cases if c["id"] == doc)["gaps"]}
+        assert rule in gaps, f"{doc}·{rule} 写档位在未作缺口的规则上，等于悄悄失效"
+
+    deviating = {
+        (case["id"], gap["rule"])
+        for case in cases
+        for gap in case["gaps"]
+        if gap["expected_rating"] != composer.ABSENCE_BAND.get(gap["rule"], "red")
+    }
+    assert deviating == set(composer.GAP_BAND_OVERRIDES), (
+        f"有缺口档位偏离默认却不在覆盖表里：{sorted(deviating ^ set(composer.GAP_BAND_OVERRIDES))}"
+    )
 
 
 def test_a_compliant_clause_never_cancels_its_own_limit():
