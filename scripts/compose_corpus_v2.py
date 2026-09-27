@@ -208,6 +208,11 @@ DEFECT_NOTES = {
 GAP_NOTES = {
     "付款账期": "全文未约定付款账期与支付前提",
     "定价清晰度": "全文无价格与费用条款",
+    # One note serves every document this rule is a gap in, so it has to be true
+    # of all of them. It is not: CG-V2-02 defines 应形成的资料清单（名称、份数与提交
+    # 方式以附表为准）and a 上线后运行观察期 with 驻场值守, so 交付内容 is arranged and
+    # only 验收标准与流程 are missing — which the guidance grades 黄（验收标准模糊）, not
+    # 「无交付或验收条款」=红. Both paid arms judged amber (2026-09-27); see #32.
     "交付与验收条款": "全文未约定交付内容、时间与验收流程",
     "责任上限": "全文无责任限额安排",
     "终止条款": "全文未约定合同解除或终止条件与通知期",
