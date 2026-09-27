@@ -379,7 +379,7 @@ def aggregate(results: list[dict]) -> dict:
 
     defect_hit, defect_total = _bucket_totals(results, "defect", lambda d: d["flagged"])
     defect_exact, _ = _bucket_totals(results, "defect", lambda d: d["exact"])
-    blocked_hit, _ = _bucket_totals(results, None, lambda d: d.get("retrieval_blocked"))
+    blocked_hit, _ = _bucket_totals(results, None, lambda d: bool(d.get("retrieval_blocked")))
     defect_hit_ok, defect_total_ok = _bucket_totals(
         results, "defect", lambda d: d["flagged"], skip_blocked=True
     )
@@ -1226,7 +1226,7 @@ def render_markdown(
         for detail in sorted(result["metrics"]["details"], key=lambda d: (d["kind"], d["rule"])):
             mark = "✅" if detail["exact"] else ("⚠️" if detail["flagged"] else "❌")
             label = detail["kind"]
-            if detail["defect_groundable"] and detail["flagged"] and not detail["defect_grounded"]:
+            if detail.get("defect_groundable") and detail["flagged"] and not detail.get("defect_grounded"):
                 label = "defect 未读到原文"
             lines.append(
                 f"| {detail['rule']} {mark} | {label} | {detail['expected']} | {detail['actual']} "
