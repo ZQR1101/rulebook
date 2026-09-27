@@ -5,9 +5,9 @@ balance destroys the verdicts already paid for. This re-assembles them: run the
 missing documents again with ``--only`` and pool the parts here.
 
 It refuses to pool runs that are not the same measurement (corpus, model,
-temperature, retrieval arm, fake mode), keeps the newest file for any document
-two runs both contain, and records which part every document came from — a
-pooled baseline has to be auditable or it is just a nicer-looking number.
+temperature, retrieval arm, clause budget, fake mode), keeps the newest file for
+any document two runs both contain, and records which part every document came
+from — a pooled baseline has to be auditable or it is just a nicer-looking number.
 
     python scripts/pool_run_parts.py part1.json part2.json \
         --metrics-out pooled.json --report-out pooled.md
@@ -31,10 +31,24 @@ from scripts.evaluate_seeded_defects import (  # noqa: E402
 )
 
 SAME_MEASUREMENT_FIELDS = ("model", "temperature", "retrieval_arm", "fake")
+# The whole-document arm and the shipping arm report the same retrieval_arm and
+# differ *only* by this knob, so pooling across it would produce a baseline that
+# answers no question at all.
+BUDGET_FIELD = "clause_budget_chars"
 
 
 def _portable(path: str) -> str:
     return Path(str(path).replace("\\", "/")).as_posix()
+
+
+def _recorded_budgets(payloads: list[dict]) -> list[int]:
+    """Clause budgets the parts actually recorded. Artifacts predating the field record none."""
+
+    return sorted({
+        payload[BUDGET_FIELD]
+        for payload in payloads
+        if payload.get(BUDGET_FIELD) is not None
+    })
 
 
 def _conflict(payloads: list[dict]) -> str | None:
@@ -45,7 +59,14 @@ def _conflict(payloads: list[dict]) -> str | None:
         if len(values) > 1:
             return f"{field} 不一致：{' vs '.join(sorted(values))}"
     corpora = {_portable(payload.get("cases_file") or "") for payload in payloads}
-    return None if len(corpora) == 1 else f"金标集不一致：{' vs '.join(sorted(corpora))}"
+    if len(corpora) > 1:
+        return f"金标集不一致：{' vs '.join(sorted(corpora))}"
+    # A part that predates the field is unknown, not a contradiction: refusing it
+    # would throw away paid verdicts over a label that did not exist when they ran.
+    budgets = _recorded_budgets(payloads)
+    if len(budgets) > 1:
+        return f"条款预算不一致：{' vs '.join(str(budget) for budget in budgets)} 字/规则"
+    return None
 
 
 def merge(parts: list[tuple[str, list[dict]]]) -> tuple[dict[str, dict], dict[str, str]]:
@@ -98,6 +119,8 @@ def main() -> int:
             return 1
 
     first = payloads[0]
+    budgets = _recorded_budgets(payloads)
+    unlabelled = sum(1 for payload in payloads if payload.get(BUDGET_FIELD) is None)
     merged, origin = merge(list(zip(paths, [payload["results"] for payload in payloads])))
     results = list(merged.values())
     covered = set(merged)
@@ -114,6 +137,7 @@ def main() -> int:
         "temperature": first.get("temperature"),
         "retrieval_mode": first.get("retrieval_mode"),
         "retrieval_arm": first.get("retrieval_arm"),
+        BUDGET_FIELD: budgets[0] if (len(budgets) == 1 and not unlabelled) else None,
         "cases_file": first.get("cases_file"),
         "pooled_from": pooled_from,
         "failed_cases": failed,
@@ -143,6 +167,14 @@ def main() -> int:
 
     print(f"[OK] 合并 {len(covered)} 份文档 / {overall['rules_scored']} 条判定 → {args.metrics_out}")
     print(f"[OK] 报告 → {args.report_out}")
+    if unlabelled:
+        print(
+            f"[WARN] {unlabelled}/{len(paths)} 份运行未记录条款预算（早于该字段），拼合基线的预算记为未知；"
+            f"已记录的部分为 {budgets[0] if budgets else '—'} 字/规则。两臂混拼无法从文件本身排除，"
+            "请人工核对这几轮跑时的 MAX_RULE_CONTEXT_CHARS。"
+        )
+    else:
+        print(f"[OK] 条款预算同为 {budgets[0]} 字/规则")
     if failed:
         print(f"[WARN] 仍标记为未完成：{', '.join(failed)}")
     gaps = _missing_cases(str(document.get("cases_file") or ""), covered)

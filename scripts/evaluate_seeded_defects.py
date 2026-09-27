@@ -1399,6 +1399,8 @@ def main() -> int:
 
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.metrics.parent.mkdir(parents=True, exist_ok=True)
+    from backend.engine.retrieval import rule_context_budget
+
     args.report.write_text(
         render_markdown(
             results, fake=args.fake, failed=failed, passes=passes, retrieval_arm=args.retrieval
@@ -1411,6 +1413,7 @@ def main() -> int:
              "model": selected_model, "temperature": args.temperature,
              "retrieval_mode": os.environ.get("RETRIEVAL_MODE"),
              "retrieval_arm": args.retrieval,
+             "clause_budget_chars": rule_context_budget(),
              "cases_file": str(args.cases),
              "failed_cases": failed,
              "overall": aggregate(results),

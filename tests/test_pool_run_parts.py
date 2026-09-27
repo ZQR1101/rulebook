@@ -60,6 +60,18 @@ def test_two_arms_of_the_same_corpus_are_not_one_measurement():
     assert pool._conflict([keyword, other_corpus]).startswith("金标集不一致")
 
 
+def test_arms_that_differ_only_by_clause_budget_are_not_one_measurement():
+    """The whole-document arm reports retrieval_arm=keyword, so the budget is the only handle."""
+
+    shipping = _payload([], clause_budget_chars=6000)
+    whole = _payload([], clause_budget_chars=12000)
+    assert pool._conflict([shipping, whole]) == "条款预算不一致：6000 vs 12000 字/规则"
+    assert pool._conflict([shipping, _payload([], clause_budget_chars=6000)]) is None
+    # A part predating the field is unknown, not a contradiction: refusing it would
+    # throw away paid verdicts over a label that did not exist when they ran.
+    assert pool._conflict([shipping, _payload([])]) is None
+
+
 def _run_pool(inputs: list[Path], tmp_path: Path, monkeypatch) -> int:
     monkeypatch.setattr(
         sys,
@@ -114,3 +126,39 @@ def test_pooling_one_pass_reproduces_that_pass_numbers(tmp_path, monkeypatch):
     report = (tmp_path / "pooled.md").read_text(encoding="utf-8")
     assert "本基线由多次运行拼合" in report
     assert str(single) in report
+
+
+def _labelled_copy(tmp_path: Path, name: str, budget: int | None) -> Path:
+    """One-pass copy of the committed v1 run, optionally carrying a clause budget."""
+
+    source = json.loads(COMMITTED_RUN.read_text(encoding="utf-8"))
+    path = _single_pass_copy(source, tmp_path / name)
+    if budget is None:
+        return path
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["clause_budget_chars"] = budget
+    path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    return path
+
+
+def test_a_fully_labelled_pool_certifies_its_working_point(tmp_path, monkeypatch, capsys):
+    parts = [_labelled_copy(tmp_path, f"part_{index}.json", 6000) for index in (1, 2)]
+
+    assert _run_pool(parts, tmp_path, monkeypatch) == 0
+
+    pooled = json.loads((tmp_path / "pooled.json").read_text(encoding="utf-8"))
+    assert pooled["clause_budget_chars"] == 6000
+    assert "条款预算同为 6000 字/规则" in capsys.readouterr().out
+
+
+def test_a_part_without_a_recorded_budget_pools_but_does_not_certify(tmp_path, monkeypatch, capsys):
+    legacy = _labelled_copy(tmp_path, "legacy.json", None)
+    labelled = _labelled_copy(tmp_path, "labelled.json", 6000)
+
+    assert _run_pool([legacy, labelled], tmp_path, monkeypatch) == 0
+
+    pooled = json.loads((tmp_path / "pooled.json").read_text(encoding="utf-8"))
+    assert pooled["clause_budget_chars"] is None, "有一份没记录预算，拼合结果不该自称核验过工作点"
+    out = capsys.readouterr().out
+    assert "1/2 份运行未记录条款预算" in out
+    assert "条款预算同为" not in out
